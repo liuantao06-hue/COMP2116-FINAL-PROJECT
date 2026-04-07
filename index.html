@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Selector - COMP2116 Project</title>
+    <style>
+        /* 1. 全局变量与主题 */
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --primary-color: #2ecc71;
+            --accent-color: #e74c3c;
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #f0f0f0;
+            --primary-color: #27ae60;
+            --border-color: #444;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* 2. 输入区域 */
+        textarea {
+            width: 100%;
+            height: 150px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* 3. 抽签显示区 (核心动画) */
+        #display-area {
+            font-size: 2.5rem;
+            font-weight: 800;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--primary-color);
+            border: 3px dashed var(--primary-color);
+            margin: 20px 0;
+            border-radius: 12px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        /* 4. 按钮 */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-danger { background: var(--accent-color); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+
+        /* 5. 结果历史 */
+        .history {
+            border-top: 2px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .result-item {
+            background: var(--bg-color);
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .group-tag {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+            font-size: 12px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2>🎯 Smart Selector</h2>
+        <button class="btn-outline" style="flex:none" onclick="toggleTheme()">🌓 切换模式</button>
+    </header>
+
+    <div class="input-group">
+        <label>名单列表 (一行一个名字):</label>
+        <textarea id="nameInput" placeholder="张三&#10;李四&#10;王五..."></textarea>
+    </div>
+
+    <div class="config-grid">
+        <div class="input-group">
+            <label>模式设置:</label>
+            <select id="drawMode">
+                <option value="once">单次抽签 (不放回)</option>
+                <option value="repeat">多次抽签 (可放回)</option>
+                <option value="no-repeat">多次抽签 (不放回)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>每组抽取人数:</label>
+            <input type="number" id="drawCount" value="1" min="1">
+        </div>
+        <div class="input-group">
+            <label>总分组数:</label>
+            <input type="number" id="groupCount" value="1" min="1">
+        </div>
+    </div>
+
+    <div id="display-area">Ready?</div>
+
+    <div class="controls">
+        <button class="btn-primary" id="startBtn" onclick="startRolling()">开始滚动</button>
+        <button class="btn-danger" id="stopBtn" onclick="stopRolling()" disabled>停止</button>
+    </div>
+
+    <div class="history">
+        <h3>📜 历史记录 <button onclick="clearHistory()" style="font-size:12px; padding:4px 8px; float:right">清空</button></h3>
+        <div id="resultLog"></div>
+    </div>
+</div>
+
+<script>
+    let allNames = [];
+    let pool = [];
+    let rollingInterval = null;
+
+    // 1. 主题切换
+    function toggleTheme() {
+        const body = document.body;
+        const isDark = body.getAttribute('data-theme') === 'dark';
+        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    }
+
+    // 2. 开始滚动动画
+    function startRolling() {
+        const input = document.getElementById('nameInput').value.trim();
+        if (!input) return alert("请输入名单！");
+        
+        allNames = input.split('\n').filter(n => n.trim() !== "");
+        
+        // 初始化抽签池
+        const mode = document.getElementById('drawMode').value;
+        if (mode === 'no-repeat' && pool.length === 0) {
+            pool = [...allNames];
+        } else if (mode !== 'no-repeat') {
+            pool = [...allNames];
+        }
+
+        if (pool.length === 0) return alert("名单已抽完！请清空记录或重新输入。");
+
+        // 按钮状态切换
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+
+        // 动画逻辑
+        rollingInterval = setInterval(() => {
+            const tempName = pool[Math.floor(Math.random() * pool.length)];
+            document.getElementById('display-area').innerText = tempName;
+        }, 60);
+    }
+
+    // 3. 停止并计算结果
+    function stopRolling() {
+        clearInterval(rollingInterval);
+        rollingInterval = null;
+        
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+
+        const perGroup = parseInt(document.getElementById('drawCount').value);
+        const groupNum = parseInt(document.getElementById('groupCount').value);
+        const mode = document.getElementById('drawMode').value;
+
+        let sessionResults = [];
+
+        for (let g = 0; g < groupNum; g++) {
+            let currentGroup = [];
+            for (let i = 0; i < perGroup; i++) {
+                if (pool.length === 0) break;
+                
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                const winner = pool[randomIndex];
+                currentGroup.push(winner);
+
+                // 如果是不放回模式，从池子里删掉
+                if (mode === 'no-repeat' || mode === 'once') {
+                    pool.splice(randomIndex, 1);
+                }
+            }
+            if (currentGroup.length > 0) sessionResults.push(currentGroup);
+        }
+
+        renderResults(sessionResults);
+    }
+
+    // 4. 渲染结果到页面
+    function renderResults(results) {
+        const log = document.getElementById('resultLog');
+        const display = document.getElementById('display-area');
+        
+        // 更新主大屏显示最后一组
+        display.innerText = results[results.length - 1].join(', ');
+
+        // 添加到历史记录
+        const timeStamp = new Date().toLocaleTimeString();
+        results.forEach((group, i) => {
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `<small>${timeStamp}</small><br><span class="group-tag">Group ${i+1}</span> <strong>${group.join(', ')}</strong>`;
+            log.prepend(item);
+        });
+    }
+
+    function clearHistory() {
+        document.getElementById('resultLog').innerHTML = "";
+        pool = [];
+        document.getElementById('display-area').innerText = "Ready?";
+    }
+</script>
+
+</body>
+</html>
