@@ -5,32 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Selector Pro - COMP2116</title>
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --primary: #2ecc71; --secondary: #3498db; --warning: #fff9c4; }
+        :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --primary: #2ecc71; --secondary: #3498db; --warning: #fff9c4; --danger: #ff7675; }
         [data-theme="dark"] { --bg: #1a1a1a; --card: #2d2d2d; --text: #f0f0f0; --primary: #27ae60; --secondary: #2980b9; --warning: #4d491e; }
         
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 50px; }
         .hidden { display: none !important; }
         
-        /* 布局控制 */
         .app-container { max-width: 800px; margin: 15px auto; padding: 20px; background: var(--card); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         #home-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-        .mode-card { width: 280px; padding: 30px; background: var(--card); border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .mode-card { width: 280px; padding: 30px; background: var(--card); border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; }
         .mode-card:hover { border-color: var(--primary); transform: translateY(-5px); }
 
-        /* 输入区：仅针对重复项精准高亮 */
+        /* 输入区 */
         .input-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; color: var(--secondary); font-weight: bold; }
-        #nameInput { width: 100%; height: 150px; border-radius: 8px; border: 1px solid #ddd; padding: 12px; font-size: 16px; box-sizing: border-box; background: var(--bg); color: var(--text); transition: background-color 0.3s; }
+        #nameInput { width: 100%; height: 150px; border-radius: 8px; border: 1px solid #ddd; padding: 12px; font-size: 16px; box-sizing: border-box; background: var(--bg); color: var(--text); transition: 0.3s; }
         .has-dup { background-color: var(--warning) !important; border-color: #f1c40f !important; }
 
-        /* 强制显示的配置面板 */
-        .config-panel { background: var(--bg); padding: 15px; border-radius: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 15px 0; border: 1px solid #eee; }
+        /* 重复名显示区域 */
+        #duplicate-list { font-size: 12px; color: #d63031; background: rgba(214, 48, 49, 0.1); padding: 8px; border-radius: 5px; margin-top: 5px; display: none; }
+
+        /* 配置面板 */
+        .config-panel { background: var(--bg); padding: 15px; border-radius: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 15px 0; }
         .config-item { display: flex; flex-direction: column; gap: 5px; }
         .config-item label { font-size: 12px; color: #666; }
 
         /* 展示与动画 */
         #display-box { font-size: 2.2rem; font-weight: 800; text-align: center; padding: 40px; border: 3px dashed var(--primary); border-radius: 15px; margin: 15px 0; color: var(--primary); background: rgba(46, 204, 113, 0.05); }
         .pk-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
-        .group-card { background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid #ddd; border-top: 5px solid var(--secondary); min-height: 80px; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .group-card { background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid #ddd; border-top: 5px solid var(--secondary); min-height: 80px; animation: popIn 0.4s ease; }
         .winner-name { font-weight: bold; color: var(--primary); font-size: 1.2rem; }
 
         button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; font-size: 16px; }
@@ -43,8 +45,7 @@
 <button class="btn-theme" onclick="toggleTheme()">🌓 Theme</button>
 
 <div id="home-screen">
-    <h1 style="margin-bottom:0">🎯 Smart Selector Pro</h1>
-    <p style="color:gray; margin-bottom:30px">COMP2116 Final Project - Pilot Level</p >
+    <h1>🎯 Smart Selector Pro</h1>
     <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
         <div class="mode-card" onclick="entryApp('single')">
             <h2>☝️ 单次抽签</h2>
@@ -69,13 +70,15 @@
             <span id="dupMsg" style="color:#e74c3c"></span>
         </div>
         <textarea id="nameInput" oninput="validateList()" placeholder="请输入名单，每行一个名字..."></textarea>
+        
+        <div id="duplicate-list"></div>
 
         <div id="multi-config" class="config-panel hidden">
             <div class="config-item">
-                <label>抽签逻辑</label>
+                <label>抽签策略</label>
                 <select id="drawStrategy">
-                    <option value="no-repeat">不放回 (抽完即止)</option>
-                    <option value="repeat">可放回 (概率恒定)</option>
+                    <option value="no-repeat">不放回 (抽完不再出)</option>
+                    <option value="repeat">可放回 (重复抽取)</option>
                 </select>
             </div>
             <div class="config-item">
@@ -83,7 +86,7 @@
                 <input type="number" id="perCount" value="1" min="1">
             </div>
             <div class="config-item">
-                <label>总分组数 (用于PK)</label>
+                <label>总分组数 (PK)</label>
                 <input type="number" id="groupCount" value="1" min="1">
             </div>
         </div>
@@ -115,7 +118,6 @@
         document.getElementById('app-screen').classList.remove('hidden');
         document.getElementById('mode-badge').innerText = mode === 'single' ? 'SINGLE DRAW' : 'MULTI/GROUP DRAW';
         
-        // 确保配置项显示逻辑正确
         const config = document.getElementById('multi-config');
         if(mode === 'multi') config.classList.remove('hidden');
         else config.classList.add('hidden');
@@ -127,35 +129,40 @@
         resetAll();
     }
 
-    // 精准高亮：只有检测到重复才变黄
+    // 核心更新：不仅变黄，还列出具体的重复名
     function validateList() {
         const textarea = document.getElementById('nameInput');
         const list = textarea.value.split('\n').map(l => l.trim()).filter(l => l);
         document.getElementById('nameCount').innerText = `名单总数: ${list.length}`;
 
+        // 寻找重复项
         const dups = list.filter((item, index) => list.indexOf(item) !== index);
-        if(dups.length > 0) {
+        const uniqueDups = [...new Set(dups)];
+        const dupBox = document.getElementById('duplicate-list');
+
+        if(uniqueDups.length > 0) {
             textarea.classList.add('has-dup');
-            document.getElementById('dupMsg').innerText = `⚠️ 检测到 ${new Set(dups).size} 个重复名`;
+            document.getElementById('dupMsg').innerText = `⚠️ 检测到重复`;
+            dupBox.style.display = 'block';
+            dupBox.innerText = `重复的名字: ${uniqueDups.join(', ')}`;
         } else {
             textarea.classList.remove('has-dup');
             document.getElementById('dupMsg').innerText = "";
+            dupBox.style.display = 'none';
         }
     }
 
     function handleAction() {
         const input = document.getElementById('nameInput').value.trim();
-        if(!input) return alert("请先输入名单！");
+        if(!input) return alert("名单不能为空");
         const list = input.split('\n').map(l => l.trim()).filter(l => l);
 
         if(!isRolling) {
             isRolling = true;
-            document.getElementById('actionBtn').innerText = "停止并出结果";
+            document.getElementById('actionBtn').innerText = "停止";
             
-            // 如果是分组模式，先清空并显示分组框架 (满足需求4)
-            if(appMode === 'multi') {
-                prepareGroupFrames();
-            }
+            // 分组抽签：先显示空框架
+            if(appMode === 'multi') prepareFrames();
 
             timer = setInterval(() => {
                 document.getElementById('display-box').innerText = list[Math.floor(Math.random() * list.length)];
@@ -165,16 +172,15 @@
         }
     }
 
-    // 需求4：先显示分组结果（框架）
-    function prepareGroupFrames() {
+    function prepareFrames() {
         const groups = parseInt(document.getElementById('groupCount').value) || 1;
         const view = document.getElementById('pk-view');
         view.innerHTML = "";
         for(let i=0; i<groups; i++) {
             const frame = document.createElement('div');
             frame.className = 'group-card';
-            frame.id = `group-idx-${i}`;
-            frame.innerHTML = `<strong>第 ${i+1} 组</strong><br><span style="color:#aaa; font-size:12px">等待抽取...</span>`;
+            frame.id = `g-${i}`;
+            frame.innerHTML = `<strong>第 ${i+1} 组</strong><br><span style="color:#aaa">抽取中...</span>`;
             view.appendChild(frame);
         }
     }
@@ -185,14 +191,14 @@
         document.getElementById('actionBtn').innerText = "开始旋转";
 
         if(appMode === 'single') {
-            const winner = list[Math.floor(Math.random() * list.length)];
-            document.getElementById('display-box').innerHTML = `<span style="font-size:1rem; color:gray">中奖者:</span><br>🎉 ${winner}`;
+            const res = list[Math.floor(Math.random() * list.length)];
+            document.getElementById('display-box').innerHTML = `<span style="font-size:12px;color:gray">结果:</span><br>🎉 ${res}`;
         } else {
-            drawMultiLogic(list);
+            executeMulti(list);
         }
     }
 
-    function drawMultiLogic(list) {
+    function executeMulti(list) {
         const per = parseInt(document.getElementById('perCount').value) || 1;
         const groups = parseInt(document.getElementById('groupCount').value) || 1;
         const strategy = document.getElementById('drawStrategy').value;
@@ -206,15 +212,10 @@
                 winners.push(pool[idx]);
                 if(strategy === 'no-repeat') pool.splice(idx, 1);
             }
-            
-            const frame = document.getElementById(`group-idx-${i}`);
-            if(frame && winners.length > 0) {
-                frame.innerHTML = `<strong>第 ${i+1} 组</strong><br><span class="winner-name">${winners.join(' 、 ')}</span>`;
-            } else if(frame) {
-                frame.innerHTML = `<strong>第 ${i+1} 组</strong><br><span style="color:gray">名单已抽完</span>`;
-            }
+            const frame = document.getElementById(`g-${i}`);
+            if(frame) frame.innerHTML = `<strong>第 ${i+1} 组</strong><br><span class="winner-name">${winners.join(' 、 ')}</span>`;
         }
-        document.getElementById('display-box').innerText = "抽签完毕";
+        document.getElementById('display-box').innerText = "DONE!";
     }
 
     function resetAll() {
