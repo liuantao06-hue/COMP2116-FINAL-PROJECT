@@ -1,158 +1,103 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2048 Python Pro</title>
-    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <title>2048 Python Fix</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        :root {
-            --bg: #faf8ef; --grid: #bbada0; --text: #776e65;
-        }
-        body {
-            background: var(--bg); color: var(--text); font-family: sans-serif;
-            margin: 0; display: flex; flex-direction: column; align-items: center;
-            touch-action: none; /* 防止手机浏览器下拉刷新 */
-        }
-        .header { width: 90%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
-        .score-box { background: #bbada0; padding: 10px; border-radius: 6px; color: white; min-width: 80px; text-align: center; }
-        
-        #grid-container {
-            width: 320px; height: 320px; background: var(--grid);
-            border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 10px; padding: 10px; margin-top: 20px; position: relative;
-        }
-        @media (min-width: 450px) { #grid-container { width: 400px; height: 400px; } }
-
-        .cell {
-            background: rgba(238, 228, 218, 0.35); border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: bold; transition: 0.1s;
-        }
-        /* 数字颜色逻辑 */
-        .n-2 { background: #eee4da; color: #776e65; }
-        .n-4 { background: #ede0c8; color: #776e65; }
-        .n-8 { background: #f2b179; color: white; }
-        .n-16 { background: #f59563; color: white; }
-        .n-32 { background: #f67c5f; color: white; }
-        .n-64 { background: #f65e3b; color: white; }
-        .n-128 { background: #edcf72; color: white; font-size: 20px; }
-        .n-256 { background: #edcc61; color: white; font-size: 20px; }
-        .n-512 { background: #edc850; color: white; font-size: 20px; }
-        .n-1024 { background: #edc53f; color: white; font-size: 16px; }
-        .n-2048 { background: #edc22e; color: white; font-size: 16px; }
-
-        .btn {
-            margin-top: 20px; padding: 10px 20px; background: #8f7a66;
-            color: white; border: none; border-radius: 4px; cursor: pointer;
-            font-weight: bold; font-size: 1rem;
-        }
-        .btn:active { transform: scale(0.95); }
+        body { background: #faf8ef; color: #776e65; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; }
+        .score-container { background: #bbada0; padding: 10px 25px; border-radius: 6px; color: white; margin: 10px; }
+        #grid { width: 320px; height: 320px; background: #bbada0; border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; }
+        .cell { background: rgba(238, 228, 218, 0.35); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
+        .n-2 { background: #eee4da; } .n-4 { background: #ede0c8; } .n-8 { background: #f2b179; color: white; }
+        .n-16 { background: #f59563; color: white; } .n-32 { background: #f67c5f; color: white; }
+        .btn { margin: 10px; padding: 10px 20px; background: #8f7a66; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1 style="margin:0">2048</h1>
-        <div class="score-box">
-            <div style="font-size: 12px;">SCORE</div>
-            <div id="score">0</div>
-        </div>
+    <div class="score-container">分数: <span id="score">0</span></div>
+    <div id="grid"></div>
+    <div class="controls">
+        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp'}))">↑</button><br>
+        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))">←</button>
+        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowDown'}))">↓</button>
+        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))">→</button>
     </div>
-
-    <div id="grid-container"></div>
-
-    <button class="btn" id="reset-btn">再来一局</button>
-    <p style="font-size: 12px; margin-top: 15px;">电脑：方向键 | 手机：滑动屏幕</p>
+    <button class="btn" id="restart">再来一局</button>
 
     <script type="py">
-        from pyscript import document, window
+        from pyscript import document
         import random
 
-        class Game:
-            def __init__(self):
-                self.reset()
-                
-            def reset(self):
-                self.board = [[0]*4 for _ in range(4)]
-                self.score = 0
-                self.add_tile()
-                self.add_tile()
-                self.render()
+        board = [[0]*4 for _ in range(4)]
+        score = 0
 
-            def add_tile(self):
-                empty = [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
-                if empty:
-                    r, c = random.choice(empty)
-                    self.board[r][c] = 2 if random.random() < 0.9 else 4
+        def init_game():
+            global board, score
+            board = [[0]*4 for _ in range(4)]
+            score = 0
+            add_tile()
+            add_tile()
+            render()
 
-            def move(self, direction):
-                # 0:left, 1:down, 2:right, 3:up
-                original = [row[:] for row in self.board]
-                for _ in range(direction):
-                    self.board = [list(r) for r in zip(*self.board[::-1])]
-                
-                moved = False
-                for i in range(4):
-                    row = [x for x in self.board[i] if x != 0]
-                    for j in range(len(row)-1):
-                        if row[j] == row[j+1]:
-                            row[j] *= 2
-                            self.score += row[j]
-                            row[j+1] = 0
-                    row = [x for x in row if x != 0]
-                    row += [0] * (4 - len(row))
-                    if self.board[i] != row: moved = True
-                    self.board[i] = row
+        def add_tile():
+            empty = [(r, c) for r in range(4) for c in range(4) if board[r][c] == 0]
+            if empty:
+                r, c = random.choice(empty)
+                board[r][c] = 2 if random.random() < 0.9 else 4
 
-                for _ in range((4 - direction) % 4):
-                    self.board = [list(r) for r in zip(*self.board[::-1])]
-                
-                if moved:
-                    self.add_tile()
-                    self.render()
+        def render():
+            grid = document.getElementById("grid")
+            grid.innerHTML = ""
+            for r in range(4):
+                for c in range(4):
+                    v = board[r][c]
+                    div = document.createElement("div")
+                    div.className = f"cell n-{v}" if v else "cell"
+                    div.innerText = str(v) if v else ""
+                    grid.appendChild(div)
+            document.getElementById("score").innerText = str(score)
 
-            def render(self):
-                grid = document.getElementById("grid-container")
-                grid.innerHTML = ""
-                for r in range(4):
-                    for c in range(4):
-                        val = self.board[r][c]
-                        div = document.createElement("div")
-                        div.className = f"cell n-{val}" if val else "cell"
-                        div.innerText = str(val) if val else ""
-                        grid.appendChild(div)
-                document.getElementById("score").innerText = str(self.score)
+        def move(direction):
+            global board, score
+            # 0:left, 1:down, 2:right, 3:up
+            def rotate(b): return [list(r) for r in zip(*b[::-1])]
+            
+            temp_board = [row[:] for row in board]
+            for _ in range(direction): temp_board = rotate(temp_board)
+            
+            moved = False
+            new_board = []
+            for row in temp_board:
+                line = [x for x in row if x != 0]
+                for i in range(len(line)-1):
+                    if line[i] == line[i+1]:
+                        line[i] *= 2
+                        score += line[i]
+                        line[i+1] = 0
+                line = [x for x in line if x != 0]
+                line += [0] * (4 - len(line))
+                if line != row: moved = True
+                new_board.append(line)
+            
+            for _ in range((4 - direction) % 4): new_board = rotate(new_board)
+            
+            if moved:
+                board = new_board
+                add_tile()
+                render()
 
-        game = Game()
-
-        # 事件监听
         def on_key(e):
-            keys = {"ArrowLeft":0, "ArrowDown":1, "ArrowRight":2, "ArrowUp":3}
-            if e.key in keys:
+            d = {"ArrowLeft":0, "ArrowDown":1, "ArrowRight":2, "ArrowUp":3}
+            if e.key in d:
                 e.preventDefault()
-                game.move(keys[e.key])
-
-        # 触摸逻辑
-        ts = {"x": 0, "y": 0}
-        def on_touchstart(e):
-            ts["x"] = e.touches[0].clientX
-            ts["y"] = e.touches[0].clientY
-
-        def on_touchend(e):
-            dx = e.changedTouches[0].clientX - ts["x"]
-            dy = e.changedTouches[0].clientY - ts["y"]
-            if abs(dx) > 30 or abs(dy) > 30:
-                if abs(dx) > abs(dy):
-                    game.move(0 if dx < 0 else 2)
-                else:
-                    game.move(3 if dy < 0 else 1)
+                move(d[e.key])
 
         document.addEventListener("keydown", on_key)
-        document.addEventListener("touchstart", on_touchstart)
-        document.addEventListener("touchend", on_touchend)
-        document.getElementById("reset-btn").onclick = lambda e: game.reset()
+        document.getElementById("restart").onclick = lambda e: init_game()
+        init_game()
     </script>
 </body>
 </html>
