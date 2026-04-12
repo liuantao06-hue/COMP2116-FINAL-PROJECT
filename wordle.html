@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Pro - 带有提示</title>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        :root { --green: #538d4e; --yellow: #b59f3b; --gray: #3a3a3c; --bg: #121213; }
+        body { background: var(--bg); color: white; text-align: center; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        h1 { margin-bottom: 5px; letter-spacing: 2px; }
+        
+        #board { display: flex; flex-direction: column; gap: 5px; margin: 20px auto; max-width: 300px; }
+        .row { display: flex; gap: 5px; justify-content: center; }
+        .tile { width: 50px; height: 50px; border: 2px solid #3a3a3c; display: flex; align-items: center; justify-content: center; 
+                font-size: 24px; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        
+        .input-area { margin-top: 30px; }
+        input { padding: 12px; background: #272729; color: white; border: 2px solid #3a3a3c; border-radius: 8px; 
+                font-size: 18px; width: 160px; text-transform: uppercase; text-align: center; outline: none; }
+        input:focus { border-color: #818cf8; }
+        
+        .controls { margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-submit { background: var(--green); color: white; }
+        .btn-hint { background: #818cf8; color: white; }
+        .btn-restart { background: #4b5563; color: white; }
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #msg { margin-top: 20px; height: 24px; color: #818cf8; font-weight: bold; }
+        .hint-text { color: #fca5a5; font-size: 0.9rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>WORDLE</h1>
+    <div id="board"></div>
+
+    <div class="input-area">
+        <input type="text" id="guess-input" maxlength="5" placeholder="输入单词..." autocomplete="off">
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-submit" id="submit-btn">提交</button>
+        <button class="btn btn-hint" id="hint-btn">获取提示</button>
+        <button class="btn btn-restart" id="restart">再来一局</button>
+    </div>
+
+    <div id="msg"></div>
+    <div id="hint-msg" class="hint-text"></div>
+
+    <script type="py">
+        from pyscript import document
+        import random
+
+        WORDS = ["APPLE", "BEACH", "BRAIN", "CLOUD", "DREAM", "EARTH", "FLOWER", "GRAPE", "HOUSE", "IMAGE", "JUICE", "KNIFE", "LIGHT", "MUSIC", "NIGHT", "OCEAN", "PIANO", "QUEEN", "RIVER", "SMILE", "TIGER", "WATER", "YOUNG", "ZEBRA"]
+        target = ""
+        attempts = 0
+        hints_used = 0
+
+        def start_game():
+            global target, attempts, hints_used
+            target = random.choice(WORDS).upper()
+            attempts = 0
+            hints_used = 0
+            document.getElementById("board").innerHTML = ""
+            document.getElementById("msg").innerText = ""
+            document.getElementById("hint-msg").innerText = ""
+            document.getElementById("guess-input").disabled = False
+            document.getElementById("guess-input").value = ""
+            document.getElementById("hint-btn").disabled = False
+            # 自动聚焦
+            document.getElementById("guess-input").focus()
+
+        def submit_guess(e=None):
+            global attempts
+            inp = document.getElementById("guess-input")
+            guess = inp.value.upper()
+            if len(guess) != 5:
+                document.getElementById("msg").innerText = "请输入5位单词"
+                return
+            
+            document.getElementById("msg").innerText = ""
+            inp.value = ""
+            row = document.createElement("div")
+            row.className = "row"
+            
+            for i in range(5):
+                tile = document.createElement("div")
+                tile.className = "tile"
+                tile.innerText = guess[i]
+                if guess[i] == target[i]:
+                    tile.style.background = "var(--green)"
+                    tile.style.borderColor = "var(--green)"
+                elif guess[i] in target:
+                    tile.style.background = "var(--yellow)"
+                    tile.style.borderColor = "var(--yellow)"
+                else:
+                    tile.style.background = "var(--gray)"
+                    tile.style.borderColor = "var(--gray)"
+                row.appendChild(tile)
+            
+            document.getElementById("board").appendChild(row)
+            attempts += 1
+            
+            if guess == target:
+                document.getElementById("msg").innerText = f"太棒了！第 {attempts} 次就猜对了！🎉"
+                end_game()
+            elif attempts >= 6:
+                document.getElementById("msg").innerText = f"可惜！答案是: {target}"
+                end_game()
+
+        def get_hint(e):
+            global hints_used
+            if hints_used >= 3:
+                document.getElementById("hint-msg").innerText = "提示机会已用完（上限3次）"
+                return
+            
+            # 随机选一个还没被猜出的位置（或者直接选位置）
+            pos = random.randint(0, 4)
+            letter = target[pos]
+            hints_used += 1
+            document.getElementById("hint-msg").innerText = f"提示 #{hints_used}: 第 {pos+1} 个字母是 '{letter}'"
+            if hints_used >= 3:
+                document.getElementById("hint-btn").disabled = True
+
+        def end_game():
+            document.getElementById("guess-input").disabled = True
+            document.getElementById("hint-btn").disabled = True
+
+        # 绑定点击
+        document.getElementById("submit-btn").onclick = submit_guess
+        document.getElementById("hint-btn").onclick = get_hint
+        document.getElementById("restart").onclick = lambda e: start_game()
+        
+        # 回车支持
+        def handle_keypress(e):
+            if e.key == "Enter":
+                submit_guess()
+        document.getElementById("guess-input").onkeypress = handle_keypress
+        
+        start_game()
+    </script>
+</body>
+</html>
