@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>蜘蛛纸牌 - Python Pro</title>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        :root { --green: #2d5a27; --card-bg: #ffffff; }
+        body { background: var(--green); color: white; font-family: sans-serif; margin: 0; padding: 10px; overflow: hidden; touch-action: manipulation; }
+        #header { display: flex; justify-content: space-between; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px; }
+        
+        #tableau { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; height: 70vh; }
+        .pile { position: relative; border-top: 2px solid rgba(255,255,255,0.1); min-height: 100px; }
+        
+        .card { 
+            width: 100%; aspect-ratio: 0.72; background: var(--card-bg); color: black; border-radius: 4px; 
+            position: absolute; border: 1px solid #999; box-sizing: border-box; 
+            display: flex; flex-direction: column; padding: 4px; font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3); font-size: 14px;
+        }
+        /* 选中效果 */
+        .card.selected { outline: 3px solid #ffeb3b; z-index: 100 !important; transform: translateY(-5px); }
+        .card.back { background: #1e3a8a; color: transparent; background-image: repeating-linear-gradient(45deg, #2563eb, #2563eb 5px, #1e40af 5px, #1e40af 10px); }
+        .suit-red { color: #e11d48; }
+        
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn { padding: 12px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+        #deal-btn { background: #f59e0b; color: white; }
+        #restart-btn { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <span>🕷️ 蜘蛛纸牌</span>
+        <span>已完成: <b id="comp-count">0</b>/8</span>
+    </div>
+
+    <div id="tableau">
+        <div class="pile" id="p-0"></div><div class="pile" id="p-1"></div>
+        <div class="pile" id="p-2"></div><div class="pile" id="p-3"></div>
+        <div class="pile" id="p-4"></div><div class="pile" id="p-5"></div>
+        <div class="pile" id="p-6"></div><div class="pile" id="p-7"></div>
+        <div class="pile" id="p-8"></div><div class="pile" id="p-9"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="deal-btn">发牌 (余 <span id="deck-left">50</span>)</button>
+        <button class="btn" id="restart-btn">再来一局</button>
+    </div>
+
+    <script type="py">
+        from pyscript import document, window
+        import random
+
+        RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+        piles = [[] for _ in range(10)]
+        revealed = [0] * 10
+        stock = []
+        selected_info = None # 存储 (pile_idx, card_idx)
+
+        def setup_game():
+            global stock, piles, revealed, selected_info
+            selected_info = None
+            stock = list(range(1, 14)) * 8
+            random.shuffle(stock)
+            piles = [[] for _ in range(10)]
+            revealed = [0] * 10
+            
+            # 初始发牌
+            for i in range(54):
+                piles[i % 10].append(stock.pop())
+            for i in range(10):
+                revealed[i] = 1
+            
+            render()
+
+        def render():
+            document.getElementById("deck-left").innerText = str(len(stock))
+            for i in range(10):
+                pile_div = document.getElementById(f"p-{i}")
+                pile_div.innerHTML = ""
+                # 如果堆是空的，增加一个占位点击区域
+                if not piles[i]:
+                    pile_div.onclick = lambda e, p_idx=i: handle_pile_click(p_idx)
+                else:
+                    pile_div.onclick = None
+
+                for j, rank in enumerate(piles[i]):
+                    card = document.createElement("div")
+                    is_face_up = j >= (len(piles[i]) - revealed[i])
+                    card.className = "card" + ("" if is_face_up else " back")
+                    if selected_info and selected_info[0] == i and j >= selected_info[1]:
+                        card.classList.add("selected")
+                    
+                    if is_face_up:
+                        card.innerHTML = f"<div>{RANKS[rank-1]}</div><div style='font-size:20px'>♠</div>"
+                        def make_click(p_idx, c_idx):
+                            return lambda e: handle_card_click(e, p_idx, c_idx)
+                        card.onclick = make_click(i, j)
+                    
+                    card.style.top = f"{j * 20}px"
+                    card.style.zIndex = str(j)
+                    pile_div.appendChild(card)
+
+        def handle_card_click(e, p_idx, c_idx):
+            global selected_info
+            e.stopPropagation() # 防止触发 pile 的点击
+            
+            if selected_info is None:
+                # 检查是否可以选中（必须是连续递减的一串）
+                if is_movable(p_idx, c_idx):
+                    selected_info = (p_idx, c_idx)
+            else:
+                # 尝试移动
+                if not try_move(p_idx):
+                    # 如果移动失败，尝试改选当前牌
+                    if is_movable(p_idx, c_idx):
+                        selected_info = (p_idx, c_idx)
+                    else:
+                        selected_info = None
+            render()
+
+        def handle_pile_click(p_idx):
+            global selected_info
+            if selected_info:
+                try_move(p_idx)
+                render()
+
+        def is_movable(p_idx, c_idx):
+            pile = piles[p_idx]
+            face_up_start = len(pile) - revealed[p_idx]
+            if c_idx < face_up_start: return False
+            for k in range(c_idx, len(pile)-1):
+                if pile[k] != pile[k+1] + 1: return False
+            return True
+
+        def try_move(target_p_idx):
+            global selected_info
+            src_p_idx, src_c_idx = selected_info
+            moving_cards = piles[src_p_idx][src_c_idx:]
+            target_pile = piles[target_p_idx]
+            
+            # 规则：目标为空 或 目标最后一张 = 移动的第一张 + 1
+            if not target_pile or target_pile[-1] == moving_cards[0] + 1:
+                # 执行移动
+                piles[src_p_idx] = piles[src_p_idx][:src_c_idx]
+                piles[target_p_idx].extend(moving_cards)
+                
+                # 更新翻牌数
+                revealed[src_p_idx] = max(0, revealed[src_p_idx] - len(moving_cards))
+                if revealed[src_p_idx] == 0 and piles[src_p_idx]:
+                    revealed[src_p_idx] = 1
+                revealed[target_p_idx] += len(moving_cards)
+                
+                selected_info = None
+                check_complete(target_p_idx)
+                return True
+            return False
+
+        def check_complete(p_idx):
+            pile = piles[p_idx]
+            if len(pile) < 13: return
+            # 检查最后13张是否是 K到A
+            for i in range(1, 14):
+                if pile[-i] != i: return
+            # 移除
+            piles[p_idx] = pile[:-13]
+            revealed[p_idx] = max(0, revealed[p_idx] - 13)
+            if revealed[p_idx] == 0 and piles[p_idx]:
+                revealed[p_idx] = 1
+            
+            count_box = document.getElementById("comp-count")
+            count_box.innerText = str(int(count_box.innerText) + 1)
+            window.alert("消除一组 K-A！")
+
+        def deal():
+            global stock
+            if not stock: return
+            if any(len(p) == 0 for p in piles):
+                window.alert("不能有空堆时发牌！")
+                return
+            for i in range(10):
+                piles[i].append(stock.pop())
+                revealed[i] += 1
+            render()
+
+        document.getElementById("restart-btn").onclick = lambda e: setup_game()
+        document.getElementById("deal-btn").onclick = lambda e: deal()
+        setup_game()
+    </script>
+</body>
+</html>

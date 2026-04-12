@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Match 3 - Python Pro</title>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        :root { --bg: #1a1a2e; --panel: #16213e; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; overflow: hidden; touch-action: manipulation; }
+        .stat-bar { background: var(--panel); padding: 15px; border-radius: 12px; display: flex; justify-content: space-around; max-width: 400px; margin: 10px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        
+        #game-grid { 
+            display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; 
+            max-width: 400px; margin: 20px auto; background: rgba(255,255,255,0.05); 
+            padding: 8px; border-radius: 12px; position: relative;
+        }
+        
+        .gem { 
+            aspect-ratio: 1; border-radius: 20%; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; justify-content: center; font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .gem:active { transform: scale(0.9); }
+        .gem.selected { transform: scale(1.1); box-shadow: 0 0 15px #fff; outline: 3px solid white; z-index: 10; }
+        
+        /* 宝石颜色：使用更有质感的渐变 */
+        .g-0 { background: linear-gradient(135deg, #ff6b6b, #ee5253); }
+        .g-1 { background: linear-gradient(135deg, #48dbfb, #2e86de); }
+        .g-2 { background: linear-gradient(135deg, #1dd1a1, #10ac84); }
+        .g-3 { background: linear-gradient(135deg, #feca57, #ff9f43); }
+        .g-4 { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+        .g-5 { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+
+        .btn-restart { 
+            background: #ff4757; color: white; border: none; padding: 12px 30px; 
+            border-radius: 25px; font-weight: bold; font-size: 16px; cursor: pointer;
+            margin-top: 20px; transition: 0.3s;
+        }
+        .btn-restart:hover { background: #ff6b81; transform: scale(1.05); }
+        
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    </style>
+</head>
+<body>
+    <div id="loading">Python 环境初始化中...</div>
+
+    <div class="stat-bar">
+        <div>得分: <b id="score">0</b></div>
+        <div>目标: <b>1000</b></div>
+    </div>
+
+    <div id="game-grid"></div>
+    
+    <button class="btn-restart" id="restart">再来一局</button>
+
+    <script type="py">
+        from pyscript import document, window
+        import random, asyncio
+
+        GRID_SIZE = 8
+        TYPES = 6
+        board = []
+        selected = None
+        is_animating = False
+        score = 0
+
+        async def init_game():
+            global board, score, selected, is_animating
+            score = 0
+            selected = None
+            is_animating = False
+            document.getElementById("score").innerText = "0"
+            
+            # 初始化棋盘，确保初始无三连
+            board = [[random.randint(0, TYPES-1) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+            while find_matches():
+                board = [[random.randint(0, TYPES-1) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+            
+            render_board()
+            document.getElementById("loading").style.display = "none"
+
+        def find_matches():
+            matches = set()
+            # 横向检查
+            for r in range(GRID_SIZE):
+                for c in range(GRID_SIZE - 2):
+                    if board[r][c] == board[r][c+1] == board[r][c+2]:
+                        matches.update({(r, c), (r, c+1), (r, c+2)})
+            # 纵向检查
+            for c in range(GRID_SIZE):
+                for r in range(GRID_SIZE - 2):
+                    if board[r][c] == board[r+1][c] == board[r+2][c]:
+                        matches.update({(r, c), (r+1, c), (r+2, c)})
+            return list(matches)
+
+        def render_board():
+            grid_div = document.getElementById("game-grid")
+            grid_div.innerHTML = ""
+            for r in range(GRID_SIZE):
+                for c in range(GRID_SIZE):
+                    gem = document.createElement("div")
+                    gem.className = f"gem g-{board[r][c]}"
+                    if selected == (r, c):
+                        gem.classList.add("selected")
+                    
+                    # 使用闭包正确绑定坐标
+                    def make_handler(row, col):
+                        async def handler(e):
+                            await handle_click(row, col)
+                        return handler
+                    
+                    gem.onclick = make_handler(r, c)
+                    grid_div.appendChild(gem)
+
+        async def handle_click(r, c):
+            global selected, is_animating, score
+            if is_animating: return
+            
+            if selected is None:
+                selected = (r, c)
+                render_board()
+            else:
+                r1, c1 = selected
+                if abs(r-r1) + abs(c-c1) == 1:
+                    is_animating = True
+                    # 交换逻辑
+                    board[r][c], board[r1][c1] = board[r1][c1], board[r][c]
+                    selected = None
+                    render_board()
+                    
+                    await asyncio.sleep(0.3)
+                    
+                    if not await process_logic():
+                        # 换回来
+                        board[r][c], board[r1][c1] = board[r1][c1], board[r][c]
+                        render_board()
+                    
+                    is_animating = False
+                else:
+                    selected = (r, c)
+                    render_board()
+
+        async def process_logic():
+            global score
+            had_matches = False
+            while True:
+                matches = find_matches()
+                if not matches: break
+                
+                had_matches = True
+                score += len(matches) * 10
+                document.getElementById("score").innerText = str(score)
+                
+                # 消除
+                for r, c in matches:
+                    board[r][c] = -1
+                render_board()
+                await asyncio.sleep(0.3)
+                
+                # 下落
+                for c in range(GRID_SIZE):
+                    write_idx = GRID_SIZE - 1
+                    for r in range(GRID_SIZE - 1, -1, -1):
+                        if board[r][c] != -1:
+                            board[write_idx][c] = board[r][c]
+                            write_idx -= 1
+                    for r in range(write_idx, -1, -1):
+                        board[r][c] = random.randint(0, TYPES-1)
+                
+                render_board()
+                await asyncio.sleep(0.3)
+            return had_matches
+
+        # 启动与重新开始
+        async def restart_game(e):
+            await init_game()
+
+        document.getElementById("restart").onclick = restart_game
+        asyncio.ensure_future(init_game())
+    </script>
+</body>
+</html>

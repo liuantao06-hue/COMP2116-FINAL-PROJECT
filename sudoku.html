@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Python</title>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 10px; }
+        #grid { display: grid; grid-template-columns: repeat(9, 1fr); max-width: 360px; margin: 10px auto; border: 2px solid #333; background: #333; gap: 1px; }
+        .cell { width: 40px; height: 40px; background: white; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
+        .cell.fixed { background: #eee; font-weight: bold; color: #111; }
+        .cell.selected { background: #bbdefb; }
+        .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 360px; margin: 20px auto; gap: 5px; }
+        .num-btn { padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 5px; font-size: 18px; }
+        .btn-action { margin-top: 20px; padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Python 数独</h2>
+    <div id="grid"></div>
+    <div class="num-pad" id="numpad"></div>
+    <button class="btn-action" id="restart">再来一局</button>
+
+    <script type="py">
+        from pyscript import document
+        import random
+
+        class Sudoku:
+            def __init__(self):
+                self.selected_cell = None
+                self.reset()
+
+            def reset(self):
+                # 简化版生成：这里用一个预设谜题演示，真实环境可写完整递归生成
+                self.board = [
+                    [5,3,0,0,7,0,0,0,0], [6,0,0,1,9,5,0,0,0], [0,9,8,0,0,0,0,6,0],
+                    [8,0,0,0,6,0,0,0,3], [4,0,0,8,0,3,0,0,1], [7,0,0,0,2,0,0,0,6],
+                    [0,6,0,0,0,0,2,8,0], [0,0,0,4,1,9,0,0,5], [0,0,0,0,8,0,0,7,9]
+                ]
+                self.fixed = [[bool(c) for c in r] for r in self.board]
+                self.render()
+
+            def render(self):
+                grid_div = document.getElementById("grid")
+                grid_div.innerHTML = ""
+                for r in range(9):
+                    for c in range(9):
+                        cell = document.createElement("div")
+                        cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
+                        if (r, c) == self.selected_cell: cell.classList.add("selected")
+                        cell.innerText = str(self.board[r][c]) if self.board[r][c] else ""
+                        cell.onclick = self.make_select_handler(r, c)
+                        grid_div.appendChild(cell)
+
+            def make_select_handler(self, r, c):
+                def handler(e):
+                    if not self.fixed[r][c]:
+                        self.selected_cell = (r, c)
+                        self.render()
+                return handler
+
+            def set_num(self, n):
+                if self.selected_cell:
+                    r, c = self.selected_cell
+                    self.board[r][c] = n
+                    self.render()
+
+        game = Sudoku()
+
+        # 初始化数字面板
+        def init_numpad():
+            pad = document.getElementById("numpad")
+            for i in range(1, 10):
+                btn = document.createElement("button")
+                btn.className = "num-btn"
+                btn.innerText = str(i)
+                btn.onclick = lambda e, val=i: game.set_num(val)
+                pad.appendChild(btn)
+            # 清除按钮
+            btn_clear = document.createElement("button")
+            btn_clear.className = "num-btn"
+            btn_clear.innerText = "C"
+            btn_clear.onclick = lambda e: game.set_num(0)
+            pad.appendChild(btn_clear)
+
+        init_numpad()
+        document.getElementById("restart").onclick = lambda e: game.reset()
+    </script>
+</body>
+</html>

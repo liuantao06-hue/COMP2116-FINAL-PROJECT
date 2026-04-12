@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tetris Python</title>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        body { background: #202028; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; touch-action: none; }
+        #game-container { position: relative; border: 2px solid #fff; margin-top: 20px; background: #000; }
+        canvas { display: block; }
+        .stats { margin: 10px; font-size: 20px; }
+        .controls { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; margin-top: 15px; }
+        .btn { width: 60px; height: 60px; background: #444; border: none; color: white; border-radius: 10px; font-weight: bold; font-size: 18px; }
+        .btn-restart { background: #e74c3c; width: 120px; height: 40px; margin-top: 20px; border: none; color: white; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="stats">得分: <span id="score">0</span></div>
+    <div id="game-container">
+        <canvas id="tetris" width="240" height="400"></canvas>
+    </div>
+
+    <div class="controls">
+        <div></div><button class="btn" id="up">旋</button><div></div>
+        <button class="btn" id="left">左</button>
+        <button class="btn" id="down">下</button>
+        <button class="btn" id="right">右</button>
+    </div>
+    
+    <button class="btn-restart" id="restart">再来一局</button>
+
+    <script type="py">
+        from pyscript import document, window
+        import asyncio
+
+        # 方块形状定义
+        SHAPES = [
+            [[1, 1, 1, 1]], # I
+            [[1, 1], [1, 1]], # O
+            [[0, 1, 0], [1, 1, 1]], # T
+            [[1, 0, 0], [1, 1, 1]], # L
+            [[0, 0, 1], [1, 1, 1]], # J
+            [[0, 1, 1], [1, 1, 0]], # S
+            [[1, 1, 0], [0, 1, 1]]  # Z
+        ]
+
+        class Tetris:
+            def __init__(self):
+                self.canvas = document.getElementById("tetris")
+                self.ctx = self.canvas.getContext("2d")
+                self.reset()
+
+            def reset(self):
+                self.grid = [[0]*12 for _ in range(20)]
+                self.score = 0
+                self.game_over = False
+                self.current_piece = self.new_piece()
+                self.pos = [0, 4] # row, col
+                self.update_score()
+
+            def new_piece(self):
+                import random
+                return random.choice(SHAPES)
+
+            def collide(self, r_off, c_off, piece=None):
+                p = piece or self.current_piece
+                for r, row in enumerate(p):
+                    for c, val in enumerate(row):
+                        if val:
+                            nr, nc = self.pos[0] + r + r_off, self.pos[1] + c + c_off
+                            if nr < 0 or nr >= 20 or nc < 0 or nc >= 12 or self.grid[nr][nc]:
+                                return True
+                return False
+
+            def rotate(self):
+                rotated = [list(row) for row in zip(*self.current_piece[::-1])]
+                if not self.collide(0, 0, rotated):
+                    self.current_piece = rotated
+
+            def merge(self):
+                for r, row in enumerate(self.current_piece):
+                    for c, val in enumerate(row):
+                        if val:
+                            self.grid[self.pos[0]+r][self.pos[1]+c] = 1
+                
+                # 消行
+                new_grid = [row for row in self.grid if any(v == 0 for v in row)]
+                lines = 20 - len(new_grid)
+                if lines:
+                    self.score += lines * 100
+                    for _ in range(lines):
+                        new_grid.insert(0, [0]*12)
+                    self.grid = new_grid
+                    self.update_score()
+
+            def move(self, dr, dc):
+                if not self.collide(dr, dc):
+                    self.pos[0] += dr
+                    self.pos[1] += dc
+                    return True
+                if dr > 0: # 落地
+                    self.merge()
+                    self.pos = [0, 4]
+                    self.current_piece = self.new_piece()
+                    if self.collide(0, 0):
+                        self.game_over = True
+                return False
+
+            def draw(self):
+                self.ctx.clearRect(0, 0, 240, 400)
+                # 画背景网格
+                for r, row in enumerate(self.grid):
+                    for c, val in enumerate(row):
+                        if val: self.draw_block(r, c, "cyan")
+                # 画当前方块
+                for r, row in enumerate(self.current_piece):
+                    for c, val in enumerate(row):
+                        if val: self.draw_block(self.pos[0]+r, self.pos[1]+c, "orange")
+
+            def draw_block(self, r, c, color):
+                self.ctx.fillStyle = color
+                self.ctx.fillRect(c*20, r*20, 19, 19)
+
+            def update_score(self):
+                document.getElementById("score").innerText = str(self.score)
+
+        game = Tetris()
+
+        async def game_loop():
+            while True:
+                if not game.game_over:
+                    game.move(1, 0)
+                    game.draw()
+                await asyncio.sleep(0.5)
+
+        # 绑定事件
+        def handle_key(e):
+            if e.key == "ArrowLeft": game.move(0, -1)
+            elif e.key == "ArrowRight": game.move(0, 1)
+            elif e.key == "ArrowDown": game.move(1, 0)
+            elif e.key == "ArrowUp": game.rotate()
+            game.draw()
+
+        document.addEventListener("keydown", handle_key)
+        document.getElementById("left").onclick = lambda e: (game.move(0, -1), game.draw())
+        document.getElementById("right").onclick = lambda e: (game.move(0, 1), game.draw())
+        document.getElementById("down").onclick = lambda e: (game.move(1, 0), game.draw())
+        document.getElementById("up").onclick = lambda e: (game.rotate(), game.draw())
+        document.getElementById("restart").onclick = lambda e: game.reset()
+
+        asyncio.create_task(game_loop())
+    </script>
+</body>
+</html>
