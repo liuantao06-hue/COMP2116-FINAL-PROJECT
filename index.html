@@ -1,217 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Selector - MPU COMP2116</title>
+    <title>Python 网页游戏合集</title>
     <style>
-        :root { --bg: #f8f9fa; --card: #ffffff; --text: #2d3436; --primary: #00b894; --secondary: #0984e3; --warning: #fdcb6e; --danger: #ff7675; }
-        [data-theme="dark"] { --bg: #1e272e; --card: #2f3542; --text: #f1f2f6; --primary: #55efc4; --secondary: #74b9ff; --warning: #ffeaa7; }
+        :root { --primary: #6366f1; --bg: #0f172a; --card: #1e293b; }
+        body { background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 40px 20px; }
+        .header { text-align: center; margin-bottom: 60px; }
+        .header h1 { font-size: 2.5rem; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding: 20px; }
-        .hidden { display: none !important; }
-        
-        .app-container { max-width: 850px; margin: 0 auto; padding: 25px; background: var(--card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        #home-screen { height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 25px; }
-        .mode-card { width: 260px; padding: 30px; background: var(--card); border-radius: 15px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; }
-        .mode-card:hover { border-color: var(--primary); transform: translateY(-8px); }
-
-        /* 输入区与提示 */
-        .input-info { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; font-weight: bold; }
-        textarea { width: 100%; height: 140px; border-radius: 12px; border: 2px solid #dfe6e9; padding: 15px; font-size: 16px; box-sizing: border-box; background: var(--bg); color: var(--text); resize: none; }
-        .has-dup { background-color: var(--warning) !important; border-color: #fab1a0 !important; }
-        #dup-box { font-size: 12px; color: #d63031; background: #fff5f5; padding: 8px; border-radius: 8px; margin-top: 8px; display: none; }
-        .tip { font-size: 12px; color: #636e72; margin-top: 5px; }
-
-        /* 配置面板 */
-        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; background: var(--bg); padding: 15px; border-radius: 12px; }
-        .config-item { display: flex; flex-direction: column; gap: 5px; }
-        .config-item label { font-size: 12px; font-weight: bold; }
-        input, select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-
-        /* 展示与结果 */
-        #display-box { font-size: 2.5rem; font-weight: 900; text-align: center; padding: 50px; border: 4px dashed var(--primary); border-radius: 20px; margin: 20px 0; color: var(--primary); min-height: 80px; transition: 0.2s; }
-        .pk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .group-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #eee; border-top: 6px solid var(--secondary); animation: fadeIn 0.5s ease; }
-        
-        .btn-group { display: flex; gap: 10px; }
-        button { flex: 1; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        .btn-go { background: var(--primary); color: white; }
-        .btn-reset { background: var(--danger); color: white; width: 100px; flex: none; }
-        .btn-theme { position: fixed; top: 20px; right: 20px; background: var(--secondary); color: white; width: auto; padding: 10px; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
+        .game-card { 
+            background: var(--card); border-radius: 16px; padding: 24px; text-decoration: none; color: white;
+            transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1); display: block;
+        }
+        .game-card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+        .icon { font-size: 2rem; margin-bottom: 15px; display: block; }
+        .title { font-size: 1.25rem; font-weight: bold; margin-bottom: 8px; display: block; }
+        .desc { color: #94a3b8; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-
-<button class="btn-theme" onclick="toggleTheme()">🌓 Mode</button>
-
-<div id="home-screen">
-    <h1 style="margin:0">🏆 Pro Selector</h1>
-    <p style="color:#636e72">Software Engineering Project - COMP2116</p >
-    <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
-        <div class="mode-card" onclick="setApp('single')"><h2>☝️ 随机抢答</h2><p>支持权重概率</p ></div>
-        <div class="mode-card" onclick="setApp('multi')"><h2>👥 随机分组</h2><p>PK/团队活动</p ></div>
+    <div class="header">
+        <h1>🎮 Python Arcade Hub</h1>
+        <p>由 PyScript 驱动的纯 Python 逻辑游戏合集</p>
     </div>
-</div>
 
-<div id="app-screen" class="hidden">
-    <div class="app-container">
-        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-            <a onclick="goHome()" style="cursor:pointer; color:var(--secondary); font-weight:bold">⬅ 返回首页</a >
-            <span id="badge" style="background:var(--secondary); color:white; padding:4px 12px; border-radius:15px; font-size:12px">MODE</span>
-        </header>
-
-        <div class="input-info">
-            <span id="count-info">总人数: 0</span>
-            <span id="dup-msg" style="color:var(--danger)"></span>
-        </div>
-        <textarea id="nameInput" oninput="checkNames()" placeholder="输入名字，一行一个。&#13;支持权重，例如：张三*5 (表示5倍概率)"></textarea>
-        <div id="dup-box"></div>
-        <p class="tip">💡 提示：输入 `名字*权重`（如 `李四*2`）可增加被抽中的概率。</p >
-
-        <div id="multi-panel" class="config-grid hidden">
-            <div class="config-item"><label>抽签算法</label>
-                <select id="strategy"><option value="no-repeat">不放回 (公平分组)</option><option value="repeat">可放回</option></select>
-            </div>
-            <div class="config-item"><label>每组人数</label><input type="number" id="per" value="1" min="1"></div>
-            <div class="config-item"><label>总分组数</label><input type="number" id="groups" value="2" min="1"></div>
-        </div>
-
-        <div id="display-box">READY</div>
-
-        <div class="btn-group">
-            <button class="btn-go" id="mainBtn" onclick="run()">开始旋转</button>
-            <button class="btn-reset" onclick="reset()">重置</button>
-        </div>
-
-        <div id="result-view" class="pk-grid" style="margin-top:20px"></div>
+    <div class="grid">
+        <a href="2048.html" class="game-card">
+            <span class="icon">🔢</span>
+            <span class="title">2048</span>
+            <span class="desc">滑动数字方块，合并出 2048。</span>
+        </a>
+        <a href="tetris.html" class="game-card">
+            <span class="icon">🧱</span>
+            <span class="title">俄罗斯方块</span>
+            <span class="desc">经典消除游戏，Python 实时渲染。</span>
+        </a>
+        <a href="wordle.html" class="game-card">
+            <span class="icon">📝</span>
+            <span class="title">猜单词 (Wordle)</span>
+            <span class="desc">每日五个字母，挑战你的词汇量。</span>
+        </a>
+        <a href="sudoku.html" class="game-card">
+            <span class="icon">🧠</span>
+            <span class="title">数独</span>
+            <span class="desc">逻辑严密的九宫格数字挑战。</span>
+        </a>
+        <a href="match3.html" class="game-card">
+            <span class="icon">💎</span>
+            <span class="title">消消乐</span>
+            <span class="desc">点击或滑动交换，匹配三个即可消除。</span>
+        </a>
+        <a href="spider.html" class="game-card">
+            <span class="icon">🃏</span>
+            <span class="title">蜘蛛纸牌</span>
+            <span class="desc">经典的单人纸牌策略游戏。</span>
+        </a>
     </div>
-</div>
-
-<script>
-    let mode = 'single';
-    let rolling = false;
-    let timer = null;
-
-    function toggleTheme() {
-        const b = document.body;
-        b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-    }
-
-    function setApp(m) {
-        mode = m;
-        document.getElementById('home-screen').classList.add('hidden');
-        document.getElementById('app-screen').classList.remove('hidden');
-        document.getElementById('badge').innerText = m === 'single' ? '抢答模式' : '分组模式';
-        document.getElementById('multi-panel').style.display = m === 'multi' ? 'grid' : 'none';
-    }
-
-    function goHome() {
-        document.getElementById('home-screen').classList.remove('hidden');
-        document.getElementById('app-screen').classList.add('hidden');
-        reset();
-    }
-
-    // 名字校验与重复项列出
-    function checkNames() {
-        const txt = document.getElementById('nameInput');
-        const lines = txt.value.split('\n').map(l => l.trim().split('*')[0]).filter(l => l);
-        document.getElementById('count-info').innerText = `总人数: ${lines.length}`;
-
-        const dups = lines.filter((item, index) => lines.indexOf(item) !== index);
-        const dupBox = document.getElementById('dup-box');
-        if(dups.length > 0) {
-            txt.classList.add('has-dup');
-            dupBox.style.display = 'block';
-            dupBox.innerText = `检测到重复项: ${[...new Set(dups)].join(', ')}`;
-        } else {
-            txt.classList.remove('has-dup');
-            dupBox.style.display = 'none';
-        }
-    }
-
-    // 核心算法：权重随机
-    function getWeightedList(rawLines) {
-        let weighted = [];
-        rawLines.forEach(line => {
-            const parts = line.split('*');
-            const name = parts[0].trim();
-            const weight = parseInt(parts[1]) || 1;
-            for(let i=0; i<weight; i++) weighted.push(name);
-        });
-        return weighted;
-    }
-
-    function run() {
-        const input = document.getElementById('nameInput').value.trim();
-        if(!input) return alert("请输入名单");
-        const lines = input.split('\n').filter(l => l.trim());
-        const weightedList = getWeightedList(lines);
-
-        if(!rolling) {
-            rolling = true;
-            document.getElementById('mainBtn').innerText = "停止并出结果";
-            if(mode === 'multi') preparePK();
-            timer = setInterval(() => {
-                document.getElementById('display-box').innerText = weightedList[Math.floor(Math.random() * weightedList.length)];
-            }, 50);
-        } else {
-            stop(lines);
-        }
-    }
-
-    function preparePK() {
-        const gCount = parseInt(document.getElementById('groups').value) || 2;
-        const view = document.getElementById('result-view');
-        view.innerHTML = "";
-        for(let i=0; i<gCount; i++) {
-            const div = document.createElement('div');
-            div.className = 'group-card';
-            div.id = `group-${i}`;
-            div.innerHTML = `<strong>第 ${i+1} 组 (PK)</strong><br><span style="color:#aaa">计算中...</span>`;
-            view.appendChild(div);
-        }
-    }
-
-    function stop(rawLines) {
-        clearInterval(timer);
-        rolling = false;
-        document.getElementById('mainBtn').innerText = "开始旋转";
-        const weightedList = getWeightedList(rawLines);
-
-        if(mode === 'single') {
-            const final = weightedList[Math.floor(Math.random() * weightedList.length)];
-            document.getElementById('display-box').innerHTML = `<span style="font-size:14px;color:gray">最终抽中:</span><br>🔥 ${final}`;
-        } else {
-            const per = parseInt(document.getElementById('per').value) || 1;
-            const gCount = parseInt(document.getElementById('groups').value) || 2;
-            const strategy = document.getElementById('strategy').value;
-            let pool = (strategy === 'no-repeat') ? rawLines.map(l => l.split('*')[0].trim()) : weightedList;
-
-            for(let i=0; i<gCount; i++) {
-                let winners = [];
-                for(let j=0; j<per; j++) {
-                    if(pool.length === 0) break;
-                    const idx = Math.floor(Math.random() * pool.length);
-                    winners.push(pool[idx]);
-                    if(strategy === 'no-repeat') pool.splice(idx, 1);
-                }
-                document.getElementById(`group-${i}`).innerHTML = `<strong>第 ${i+1} 组 (PK)</strong><br><span style="color:var(--primary); font-weight:bold">${winners.join(' & ')}</span>`;
-            }
-            document.getElementById('display-box').innerText = "DONE!";
-        }
-    }
-
-    function reset() {
-        clearInterval(timer);
-        rolling = false;
-        document.getElementById('nameInput').value = "";
-        document.getElementById('result-view').innerHTML = "";
-        document.getElementById('display-box').innerText = "READY";
-        checkNames();
-    }
-</script>
 </body>
 </html>
