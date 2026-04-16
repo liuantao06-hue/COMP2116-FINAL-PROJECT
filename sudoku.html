@@ -1,78 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku Python</title>
+    <title>Sudoku Master - Python</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 10px; }
+        :root {
+            --primary: #6366f1;
+            --bg: #f8fafc;
+            --cell-size: 40px;
+            --border-thick: 3px solid #1e293b;
+            --border-thin: 1px solid #cbd5e1;
+        }
 
-        /* 优化后的 Sudoku 网格样式 */
+        body { font-family: 'Inter', sans-serif; text-align: center; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+
+        h2 { letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+
+        /* Sudoku Grid Optimization */
         #grid {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
             max-width: 360px;
             margin: 10px auto;
-            background: white; /* 单元格背景 */
-            /* 1. 设置最外层的大边框 (顶和左) */
-            border-top: 3px solid #333;
-            border-left: 3px solid #333;
-            gap: 0; /* 取消 Gap，改用边框控制 */
+            background: white;
+            border-top: var(--border-thick);
+            border-left: var(--border-thick);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .cell {
-            width: 40px;
-            height: 40px;
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
             cursor: pointer;
-            box-sizing: border-box; /* 确保边框在 40px 之内 */
-
-            /* 2. 默认所有单元格的细边框 (底和右) */
-            border-right: 1px solid #ccc;
-            border-bottom: 1px solid #ccc;
+            box-sizing: border-box;
+            border-right: var(--border-thin);
+            border-bottom: var(--border-thin);
+            transition: background 0.2s;
         }
 
-        /* 3. 使用 CSS nth-child 选择器加粗 3x3 宫的边框 */
+        /* 3x3 Grid Bold Borders */
+        .cell:nth-child(3n) { border-right: var(--border-thick); }
+        .cell:nth-child(9n) { border-right: var(--border-thick); }
 
-        /* 加粗所有宫的右边界 (第 3, 6, 9 列) */
-        .cell:nth-child(3n) {
-            border-right: 3px solid #333;
-        }
-        /* 加粗最后一列的右边界 (虽然上面设置了，但加上更明确) */
-        .cell:nth-child(9n) {
-            border-right: 3px solid #333;
-        }
-
-        /* 加粗所有宫的下边界 (第 3, 6, 9 行的单元格) */
-        /* 这里的选择器是：选择索引为 19-27, 46-54, 73-81 的元素 */
         #grid .cell:nth-child(n+19):nth-child(-n+27),
         #grid .cell:nth-child(n+46):nth-child(-n+54),
         #grid .cell:nth-child(n+73):nth-child(-n+81) {
-            border-bottom: 3px solid #333;
+            border-bottom: var(--border-thick);
         }
 
-        /* 之前的逻辑样式保持不变 */
-        .cell.fixed { background: #eee; font-weight: bold; color: #111; }
-        .cell.selected { background: #bbdefb; }
-        .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 360px; margin: 20px auto; gap: 5px; }
-        .num-btn { padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 5px; font-size: 18px; }
-        .btn-action { margin-top: 20px; padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 5px; }
+        .cell.fixed { background: #f1f5f9; font-weight: 800; color: #000; cursor: default; }
+        .cell.selected { background: #dbeafe; outline: 2px solid var(--primary); z-index: 5; }
+        .cell:hover:not(.fixed) { background: #eff6ff; }
+
+        /* Controls */
+        .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 360px; margin: 25px auto; gap: 8px; }
+        .num-btn { 
+            padding: 12px; background: white; border: 1px solid #cbd5e1; 
+            border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .num-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .num-btn.clear { color: #ef4444; }
+        .num-btn.clear:hover { background: #ef4444; color: white; }
+
+        .btn-restart { 
+            margin-top: 10px; padding: 12px 30px; background: #1e293b; color: white; 
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-restart:hover { background: #334155; }
     </style>
 </head>
 <body>
-    <h2>Python 数独</h2>
+
+    <h2>Sudoku Master</h2>
     <div id="grid"></div>
     <div class="num-pad" id="numpad"></div>
-    <button class="btn-action" id="restart">再来一局</button>
+    <button class="btn-restart" id="restart">New Game</button>
 
     <script type="py">
-        # Python 代码无需修改
         from pyscript import document
-        import random
 
         class Sudoku:
             def __init__(self):
@@ -80,13 +93,14 @@
                 self.reset()
 
             def reset(self):
-                # 简化版生成：这里用一个预设谜题演示
+                # Sample board (0 represents empty cells)
                 self.board = [
                     [5,3,0,0,7,0,0,0,0], [6,0,0,1,9,5,0,0,0], [0,9,8,0,0,0,0,6,0],
                     [8,0,0,0,6,0,0,0,3], [4,0,0,8,0,3,0,0,1], [7,0,0,0,2,0,0,0,6],
                     [0,6,0,0,0,0,2,8,0], [0,0,0,4,1,9,0,0,5], [0,0,0,0,8,0,0,7,9]
                 ]
                 self.fixed = [[bool(c) for c in r] for r in self.board]
+                self.selected_cell = None
                 self.render()
 
             def render(self):
@@ -96,8 +110,11 @@
                     for c in range(9):
                         cell = document.createElement("div")
                         cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
-                        if (r, c) == self.selected_cell: cell.classList.add("selected")
-                        cell.innerText = str(self.board[r][c]) if self.board[r][c] else ""
+                        if (r, c) == self.selected_cell: 
+                            cell.classList.add("selected")
+                        
+                        val = self.board[r][c]
+                        cell.innerText = str(val) if val else ""
                         cell.onclick = self.make_select_handler(r, c)
                         grid_div.appendChild(cell)
 
@@ -116,7 +133,7 @@
 
         game = Sudoku()
 
-        # 初始化数字面板
+        # Initialize Number Pad
         def init_numpad():
             pad = document.getElementById("numpad")
             for i in range(1, 10):
@@ -125,9 +142,10 @@
                 btn.innerText = str(i)
                 btn.onclick = lambda e, val=i: game.set_num(val)
                 pad.appendChild(btn)
-            # 清除按钮
+            
+            # Clear Button
             btn_clear = document.createElement("button")
-            btn_clear.className = "num-btn"
+            btn_clear.className = "num-btn clear"
             btn_clear.innerText = "C"
             btn_clear.onclick = lambda e: game.set_num(0)
             pad.appendChild(btn_clear)
