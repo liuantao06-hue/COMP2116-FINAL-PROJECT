@@ -1,55 +1,130 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 网页游戏合集</title>
+    <title>Python Web Arcade</title>
     <style>
-        :root { --primary: #6366f1; --bg: #0f172a; --card: #1e293b; }
-        body { background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 40px 20px; }
-        .header { text-align: center; margin-bottom: 60px; }
-        .header h1 { font-size: 2.5rem; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
-        .game-card { 
-            background: var(--card); border-radius: 16px; padding: 24px; text-decoration: none; color: white;
-            transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1); display: block;
+        :root { 
+            --primary: #6366f1; 
+            --bg: #0f172a; 
+            --card: #1e293b; 
+            --accent: linear-gradient(to right, #818cf8, #c084fc);
         }
-        .game-card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
-        .icon { font-size: 2rem; margin-bottom: 15px; display: block; }
-        .title { font-size: 1.25rem; font-weight: bold; margin-bottom: 8px; display: block; }
-        .desc { color: #94a3b8; font-size: 0.9rem; }
+        
+        body { 
+            background-color: var(--bg); 
+            color: white; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; 
+            padding: 40px 20px; 
+        }
+
+        .header { text-align: center; margin-bottom: 60px; }
+        .header h1 { 
+            font-size: 3rem; 
+            margin-bottom: 10px;
+            background: var(--accent); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .header p { color: #94a3b8; font-size: 1.1rem; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 25px; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        .game-card { 
+            background: var(--card); 
+            border-radius: 20px; 
+            padding: 30px; 
+            text-decoration: none; 
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-card:hover { 
+            transform: translateY(-12px); 
+            border-color: var(--primary); 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4); 
+            background: #243147;
+        }
+
+        .icon { font-size: 2.5rem; margin-bottom: 20px; }
+        .title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #f8fafc; }
+        .desc { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; }
+        
+        .badge {
+            display: inline-block;
+            margin-top: auto;
+            padding-top: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
+
     <div class="header">
         <h1>🎮 Python Arcade Hub</h1>
-        <p>由 PyScript 驱动的纯 Python 逻辑游戏合集</p>
+        <p>A collection of logic games powered by PyScript</p>
     </div>
 
     <div class="grid">
         
         <a href="tetris.html" class="game-card">
             <span class="icon">🧱</span>
-            <span class="title">俄罗斯方块</span>
-            <span class="desc">经典消除游戏，Python 实时渲染。</span>
+            <span class="title">Tetris Classic</span>
+            <span class="desc">The legendary tile-matching puzzle. Real-time rendering with Python logic.</span>
+            <span class="badge">Play Now →</span>
         </a>
+
         <a href="wordle.html" class="game-card">
             <span class="icon">📝</span>
-            <span class="title">猜单词 (Wordle)</span>
-            <span class="desc">每日五个字母，挑战你的词汇量。</span>
+            <span class="title">Wordle Pro</span>
+            <span class="desc">Guess the secret 5-letter word. Challenge your vocabulary and logic.</span>
+            <span class="badge">Play Now →</span>
         </a>
+
         <a href="sudoku.html" class="game-card">
             <span class="icon">🧠</span>
-            <span class="title">数独</span>
-            <span class="desc">逻辑严密的九宫格数字挑战。</span>
+            <span class="title">Sudoku Master</span>
+            <span class="desc">Sharpen your mind with the ultimate 9x9 number placement puzzle.</span>
+            <span class="badge">Play Now →</span>
         </a>
+
         <a href="match3.html" class="game-card">
             <span class="icon">💎</span>
-            <span class="title">消消乐</span>
-            <span class="desc">点击或滑动交换，匹配三个即可消除。</span>
+            <span class="title">Match-3 Jewel</span>
+            <span class="desc">Swap, match, and clear! A colorful physics-based elimination challenge.</span>
+            <span class="badge">Play Now →</span>
+        </a>
+
+        <a href="2048.html" class="game-card">
+            <span class="icon">🔢</span>
+            <span class="title">2048 Evolution</span>
+            <span class="desc">Slide the tiles to reach the 2048 square. Addictive math-based fun.</span>
+            <span class="badge">Play Now →</span>
+        </a>
+
+        <a href="spider.html" class="game-card">
+            <span class="icon">🕷️</span>
+            <span class="title">Spider Solitaire</span>
+            <span class="desc">The classic card game. Stack sequences of the same suit to win.</span>
+            <span class="badge">Play Now →</span>
         </a>
         
     </div>
+
 </body>
 </html>
