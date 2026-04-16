@@ -3,75 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2048 Open Source Python</title>
+    <title>2048 Pro Fix</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        :root {
-            --bg-color: #faf8ef;
-            --grid-bg: #bbada0;
-            --cell-empty: rgba(238, 228, 218, 0.35);
-            --text-dark: #776e65;
-            --text-light: #f9f6f2;
-        }
-
-        body {
-            background: var(--bg-color);
-            color: var(--text-dark);
-            font-family: "Clear Sans", Arial, sans-serif;
-            margin: 0; display: flex; flex-direction: column; align-items: center;
-            touch-action: none; /* 关键：禁止浏览器默认滑动 */
-        }
-
-        .header { width: 320px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
-        .score-box { background: var(--grid-bg); padding: 5px 20px; border-radius: 6px; color: white; text-align: center; }
-
-        #grid {
-            width: 320px; height: 320px; background: var(--grid-bg);
-            border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 12px; padding: 12px; box-sizing: border-box;
-        }
-
-        .cell {
-            width: 65px; height: 65px; background: var(--cell-empty);
-            border-radius: 4px; display: flex; align-items: center; justify-content: center;
-            font-size: 28px; font-weight: bold; transition: all 0.1s ease;
-        }
-
-        /* 经典 2048 配色表 */
-        .n-2 { background: #eee4da; color: var(--text-dark); }
-        .n-4 { background: #ede0c8; color: var(--text-dark); }
-        .n-8 { background: #f2b179; color: white; }
-        .n-16 { background: #f59563; color: white; }
-        .n-32 { background: #f67c5f; color: white; }
-        .n-64 { background: #f65e3b; color: white; }
-        .n-128 { background: #edcf72; color: white; font-size: 20px; }
-        .n-256 { background: #edcc61; color: white; font-size: 20px; }
-        .n-512 { background: #edc850; color: white; font-size: 20px; }
-        .n-1024 { background: #edc53f; color: white; font-size: 16px; }
-        .n-2048 { background: #edc22e; color: white; font-size: 16px; }
-
-        .btn { margin-top: 20px; padding: 10px 30px; background: #8f7a66; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        :root { --bg: #faf8ef; --grid: #bbada0; --cell: rgba(238, 228, 218, 0.35); --dark: #776e65; }
+        body { background: var(--bg); color: var(--dark); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; touch-action: none; }
+        .header { width: 300px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+        .score-box { background: var(--grid); padding: 5px 15px; border-radius: 6px; color: white; text-align: center; min-width: 80px; }
+        #grid { width: 300px; height: 300px; background: var(--grid); border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; box-sizing: border-box; }
+        .cell { width: 62.5px; height: 62.5px; background: var(--cell); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; transition: 0.1s; }
+        .n-2 { background: #eee4da; color: var(--dark); } .n-4 { background: #ede0c8; color: var(--dark); }
+        .n-8 { background: #f2b179; color: white; } .n-16 { background: #f59563; color: white; }
+        .n-32 { background: #f67c5f; color: white; } .n-64 { background: #f65e3b; color: white; }
+        .n-128 { background: #edcf72; color: white; font-size: 18px; } .n-256 { background: #edcc61; color: white; font-size: 18px; }
+        .btn { margin-top: 20px; padding: 10px 20px; background: #8f7a66; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #loading-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 100; transition: 0.5s; }
     </style>
 </head>
 <body>
+    <div id="loading-mask"><h1>Python 引擎启动中...</h1></div>
 
     <div class="header">
-        <h1 style="font-size: 40px; margin: 0;">2048</h1>
+        <h1 style="margin:0">2048</h1>
         <div class="score-box">
-            <div style="font-size: 12px;">SCORE</div>
-            <div id="score" style="font-size: 20px; font-weight: bold;">0</div>
+            <div style="font-size:10px">SCORE</div>
+            <div id="score">0</div>
         </div>
     </div>
-
     <div id="grid"></div>
-
-    <button class="btn" id="restart">重新开始</button>
+    <button class="btn" id="restart">New Game</button>
 
     <script type="py">
         from pyscript import document, window
         import random
 
-        class Game:
+        class Game2048:
             def __init__(self):
                 self.board = [[0]*4 for _ in range(4)]
                 self.score = 0
@@ -91,88 +57,75 @@
                     self.board[r][c] = 2 if random.random() < 0.9 else 4
 
             def render(self):
-                grid_div = document.getElementById("grid")
-                grid_div.innerHTML = ""
+                grid = document.getElementById("grid")
+                grid.innerHTML = ""
                 for r in range(4):
                     for c in range(4):
-                        val = self.board[r][c]
-                        cell = document.createElement("div")
-                        cell.className = f"cell n-{val}" if val else "cell"
-                        cell.innerText = str(val) if val else ""
-                        grid_div.appendChild(cell)
+                        v = self.board[r][c]
+                        div = document.createElement("div")
+                        div.className = f"cell n-{v}" if v else "cell"
+                        div.innerText = str(v) if v else ""
+                        grid.appendChild(div)
                 document.getElementById("score").innerText = str(self.score)
-
-            def _merge_row(self, row):
-                # 开源经典合并逻辑：先挤压 -> 合并 -> 再挤压
-                non_zeros = [x for x in row if x != 0]
-                new_row = []
-                skip = False
-                for i in range(len(non_zeros)):
-                    if skip:
-                        skip = False
-                        continue
-                    if i + 1 < len(non_zeros) and non_zeros[i] == non_zeros[i+1]:
-                        val = non_zeros[i] * 2
-                        new_row.append(val)
-                        self.score += val
-                        skip = True
-                    else:
-                        new_row.append(non_zeros[i])
-                return new_row + [0] * (4 - len(new_row))
 
             def move(self, direction):
                 # 0:left, 1:down, 2:right, 3:up
-                # 旋转法简化逻辑：把所有方向都转换成“向左移动”
-                def rotate(matrix):
-                    return [list(row) for row in zip(*matrix[::-1])]
-
-                new_board = [r[:] for r in self.board]
-                for _ in range(direction):
-                    new_board = rotate(new_board)
-
+                def rotate(m): return [list(row) for row in zip(*m[::-1])]
+                
+                temp = [r[:] for r in self.board]
+                for _ in range(direction): temp = rotate(temp)
+                
                 changed = False
                 for i in range(4):
-                    merged = self._merge_row(new_board[i])
-                    if merged != new_board[i]:
-                        changed = True
-                    new_board[i] = merged
-
-                for _ in range((4 - direction) % 4):
-                    new_board = rotate(new_board)
-
+                    row = [x for x in temp[i] if x != 0]
+                    new_row = []
+                    skip = False
+                    for j in range(len(row)):
+                        if skip:
+                            skip = False
+                            continue
+                        if j+1 < len(row) and row[j] == row[j+1]:
+                            new_val = row[j] * 2
+                            new_row.append(new_val)
+                            self.score += new_val
+                            skip = True
+                            changed = True
+                        else:
+                            new_row.append(row[j])
+                    new_row += [0] * (4 - len(new_row))
+                    if new_row != temp[i]: changed = True
+                    temp[i] = new_row
+                
+                for _ in range((4 - direction) % 4): temp = rotate(temp)
+                
                 if changed:
-                    self.board = new_board
+                    self.board = temp
                     self.add_tile()
                     self.render()
 
-        game = Game()
+        game = Game2048()
+        document.getElementById("loading-mask").style.display = "none"
 
-        # PC 端键盘控制
-        def on_keydown(e):
+        def on_key(e):
             d = {"ArrowLeft": 0, "ArrowDown": 1, "ArrowRight": 2, "ArrowUp": 3}
             if e.key in d:
                 e.preventDefault()
                 game.move(d[e.key])
 
-        # 移动端滑动控制
-        ts_x, ts_y = 0, 0
-        def on_touchstart(e):
-            global ts_x, ts_y
-            ts_x = e.touches.item(0).clientX
-            ts_y = e.touches.item(0).clientY
+        tx, ty = 0, 0
+        def ts(e):
+            global tx, ty
+            tx, ty = e.touches.item(0).clientX, e.touches.item(0).clientY
+        def te(e):
+            dx = e.changedTouches.item(0).clientX - tx
+            dy = e.changedTouches.item(0).clientY - ty
+            if abs(dx) > 20 or abs(dy) > 20:
+                if abs(dx) > abs(dy): game.move(0 if dx < 0 else 2)
+                else: game.move(3 if dy < 0 else 1)
 
-        def on_touchend(e):
-            dx = e.changedTouches.item(0).clientX - ts_x
-            dy = e.changedTouches.item(0).clientY - ts_y
-            if abs(dx) > 30 or abs(dy) > 30:
-                if abs(dx) > abs(dy):
-                    game.move(0 if dx < 0 else 2)
-                else:
-                    game.move(3 if dy < 0 else 1)
-
-        document.addEventListener("keydown", on_keydown)
-        document.addEventListener("touchstart", on_touchstart)
-        document.addEventListener("touchend", on_touchend)
+        document.addEventListener("keydown", on_key)
+        document.addEventListener("touchstart", ts)
+        document.addEventListener("touchend", te)
         document.getElementById("restart").onclick = lambda e: game.reset()
     </script>
 </body>
