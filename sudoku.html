@@ -1,157 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku Master - Python</title>
-    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --bg: #f8fafc;
-            --cell-size: 40px;
-            --border-thick: 3px solid #1e293b;
-            --border-thin: 1px solid #cbd5e1;
-        }
+<script type="py">
+    from pyscript import document
+    import random
 
-        body { font-family: 'Inter', sans-serif; text-align: center; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+    class Sudoku:
+        def __init__(self):
+            self.selected_cell = None
+            self.reset()
 
-        h2 { letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+        def is_valid(self, board, r, c, n):
+            # Check row
+            for i in range(9):
+                if board[r][i] == n: return False
+            # Check column
+            for i in range(9):
+                if board[i][c] == n: return False
+            # Check 3x3 box
+            start_r, start_c = 3 * (r // 3), 3 * (c // 3)
+            for i in range(3):
+                for j in range(3):
+                    if board[start_r + i][start_c + j] == n: return False
+            return True
 
-        /* Sudoku Grid Optimization */
-        #grid {
-            display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            max-width: 360px;
-            margin: 10px auto;
-            background: white;
-            border-top: var(--border-thick);
-            border-left: var(--border-thick);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
+        def solve(self, board):
+            for r in range(9):
+                for c in range(9):
+                    if board[r][c] == 0:
+                        nums = list(range(1, 10))
+                        random.shuffle(nums)
+                        for n in nums:
+                            if self.is_valid(board, r, c, n):
+                                board[r][c] = n
+                                if self.solve(board): return True
+                                board[r][c] = 0
+                        return False
+            return True
 
-        .cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            box-sizing: border-box;
-            border-right: var(--border-thin);
-            border-bottom: var(--border-thin);
-            transition: background 0.2s;
-        }
+        def generate_board(self):
+            # 1. Start with empty board
+            board = [[0 for _ in range(9)] for _ in range(9)]
+            # 2. Fully solve it
+            self.solve(board)
+            # 3. Remove numbers (e.g., keep 30-35 numbers for 'Medium' difficulty)
+            # Higher number = easier game
+            attempts = 45 
+            while attempts > 0:
+                r, c = random.randint(0, 8), random.randint(0, 8)
+                if board[r][c] != 0:
+                    board[r][c] = 0
+                    attempts -= 1
+            return board
 
-        /* 3x3 Grid Bold Borders */
-        .cell:nth-child(3n) { border-right: var(--border-thick); }
-        .cell:nth-child(9n) { border-right: var(--border-thick); }
+        def reset(self):
+            # Generate a new random board
+            self.board = self.generate_board()
+            self.fixed = [[bool(c) for c in r] for r in self.board]
+            self.selected_cell = None
+            self.render()
 
-        #grid .cell:nth-child(n+19):nth-child(-n+27),
-        #grid .cell:nth-child(n+46):nth-child(-n+54),
-        #grid .cell:nth-child(n+73):nth-child(-n+81) {
-            border-bottom: var(--border-thick);
-        }
+        def render(self):
+            grid_div = document.getElementById("grid")
+            grid_div.innerHTML = ""
+            for r in range(9):
+                for c in range(9):
+                    cell = document.createElement("div")
+                    cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
+                    if (r, c) == self.selected_cell: 
+                        cell.classList.add("selected")
+                    
+                    val = self.board[r][c]
+                    cell.innerText = str(val) if val else ""
+                    cell.onclick = self.make_select_handler(r, c)
+                    grid_div.appendChild(cell)
 
-        .cell.fixed { background: #f1f5f9; font-weight: 800; color: #000; cursor: default; }
-        .cell.selected { background: #dbeafe; outline: 2px solid var(--primary); z-index: 5; }
-        .cell:hover:not(.fixed) { background: #eff6ff; }
+        def make_select_handler(self, r, c):
+            def handler(e):
+                if not self.fixed[r][c]:
+                    self.selected_cell = (r, c)
+                    self.render()
+            return handler
 
-        /* Controls */
-        .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 360px; margin: 25px auto; gap: 8px; }
-        .num-btn { 
-            padding: 12px; background: white; border: 1px solid #cbd5e1; 
-            border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
-            transition: all 0.2s;
-        }
-        .num-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-        .num-btn.clear { color: #ef4444; }
-        .num-btn.clear:hover { background: #ef4444; color: white; }
-
-        .btn-restart { 
-            margin-top: 10px; padding: 12px 30px; background: #1e293b; color: white; 
-            border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .btn-restart:hover { background: #334155; }
-    </style>
-</head>
-<body>
-
-    <h2>Sudoku Master</h2>
-    <div id="grid"></div>
-    <div class="num-pad" id="numpad"></div>
-    <button class="btn-restart" id="restart">New Game</button>
-
-    <script type="py">
-        from pyscript import document
-
-        class Sudoku:
-            def __init__(self):
-                self.selected_cell = None
-                self.reset()
-
-            def reset(self):
-                # Sample board (0 represents empty cells)
-                self.board = [
-                    [5,3,0,0,7,0,0,0,0], [6,0,0,1,9,5,0,0,0], [0,9,8,0,0,0,0,6,0],
-                    [8,0,0,0,6,0,0,0,3], [4,0,0,8,0,3,0,0,1], [7,0,0,0,2,0,0,0,6],
-                    [0,6,0,0,0,0,2,8,0], [0,0,0,4,1,9,0,0,5], [0,0,0,0,8,0,0,7,9]
-                ]
-                self.fixed = [[bool(c) for c in r] for r in self.board]
-                self.selected_cell = None
+        def set_num(self, n):
+            if self.selected_cell:
+                r, c = self.selected_cell
+                self.board[r][c] = n
                 self.render()
 
-            def render(self):
-                grid_div = document.getElementById("grid")
-                grid_div.innerHTML = ""
-                for r in range(9):
-                    for c in range(9):
-                        cell = document.createElement("div")
-                        cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
-                        if (r, c) == self.selected_cell: 
-                            cell.classList.add("selected")
-                        
-                        val = self.board[r][c]
-                        cell.innerText = str(val) if val else ""
-                        cell.onclick = self.make_select_handler(r, c)
-                        grid_div.appendChild(cell)
+    game = Sudoku()
 
-            def make_select_handler(self, r, c):
-                def handler(e):
-                    if not self.fixed[r][c]:
-                        self.selected_cell = (r, c)
-                        self.render()
-                return handler
+    def init_numpad():
+        pad = document.getElementById("numpad")
+        pad.innerHTML = "" # Clear pad on re-init
+        for i in range(1, 10):
+            btn = document.createElement("button")
+            btn.className = "num-btn"
+            btn.innerText = str(i)
+            btn.onclick = lambda e, val=i: game.set_num(val)
+            pad.appendChild(btn)
+        
+        btn_clear = document.createElement("button")
+        btn_clear.className = "num-btn clear"
+        btn_clear.innerText = "C"
+        btn_clear.onclick = lambda e: game.set_num(0)
+        pad.appendChild(btn_clear)
 
-            def set_num(self, n):
-                if self.selected_cell:
-                    r, c = self.selected_cell
-                    self.board[r][c] = n
-                    self.render()
-
-        game = Sudoku()
-
-        # Initialize Number Pad
-        def init_numpad():
-            pad = document.getElementById("numpad")
-            for i in range(1, 10):
-                btn = document.createElement("button")
-                btn.className = "num-btn"
-                btn.innerText = str(i)
-                btn.onclick = lambda e, val=i: game.set_num(val)
-                pad.appendChild(btn)
-            
-            # Clear Button
-            btn_clear = document.createElement("button")
-            btn_clear.className = "num-btn clear"
-            btn_clear.innerText = "C"
-            btn_clear.onclick = lambda e: game.set_num(0)
-            pad.appendChild(btn_clear)
-
-        init_numpad()
-        document.getElementById("restart").onclick = lambda e: game.reset()
-    </script>
-</body>
-</html>
+    init_numpad()
+    document.getElementById("restart").onclick = lambda e: game.reset()
+</script>
