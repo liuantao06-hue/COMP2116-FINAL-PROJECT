@@ -1,108 +1,211 @@
-<script type="py">
-    from pyscript import document
-    import random
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Master - Randomized</title>
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #f8fafc;
+            --cell-size: 42px;
+            --border-thick: 3px solid #1e293b;
+            --border-thin: 1px solid #cbd5e1;
+        }
 
-    class Sudoku:
-        def __init__(self):
-            self.selected_cell = None
-            self.reset()
-
-        def is_valid(self, board, r, c, n):
-            # Check row
-            for i in range(9):
-                if board[r][i] == n: return False
-            # Check column
-            for i in range(9):
-                if board[i][c] == n: return False
-            # Check 3x3 box
-            start_r, start_c = 3 * (r // 3), 3 * (c // 3)
-            for i in range(3):
-                for j in range(3):
-                    if board[start_r + i][start_c + j] == n: return False
-            return True
-
-        def solve(self, board):
-            for r in range(9):
-                for c in range(9):
-                    if board[r][c] == 0:
-                        nums = list(range(1, 10))
-                        random.shuffle(nums)
-                        for n in nums:
-                            if self.is_valid(board, r, c, n):
-                                board[r][c] = n
-                                if self.solve(board): return True
-                                board[r][c] = 0
-                        return False
-            return True
-
-        def generate_board(self):
-            # 1. Start with empty board
-            board = [[0 for _ in range(9)] for _ in range(9)]
-            # 2. Fully solve it
-            self.solve(board)
-            # 3. Remove numbers (e.g., keep 30-35 numbers for 'Medium' difficulty)
-            # Higher number = easier game
-            attempts = 45 
-            while attempts > 0:
-                r, c = random.randint(0, 8), random.randint(0, 8)
-                if board[r][c] != 0:
-                    board[r][c] = 0
-                    attempts -= 1
-            return board
-
-        def reset(self):
-            # Generate a new random board
-            self.board = self.generate_board()
-            self.fixed = [[bool(c) for c in r] for r in self.board]
-            self.selected_cell = None
-            self.render()
-
-        def render(self):
-            grid_div = document.getElementById("grid")
-            grid_div.innerHTML = ""
-            for r in range(9):
-                for c in range(9):
-                    cell = document.createElement("div")
-                    cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
-                    if (r, c) == self.selected_cell: 
-                        cell.classList.add("selected")
-                    
-                    val = self.board[r][c]
-                    cell.innerText = str(val) if val else ""
-                    cell.onclick = self.make_select_handler(r, c)
-                    grid_div.appendChild(cell)
-
-        def make_select_handler(self, r, c):
-            def handler(e):
-                if not self.fixed[r][c]:
-                    self.selected_cell = (r, c)
-                    self.render()
-            return handler
-
-        def set_num(self, n):
-            if self.selected_cell:
-                r, c = self.selected_cell
-                self.board[r][c] = n
-                self.render()
-
-    game = Sudoku()
-
-    def init_numpad():
-        pad = document.getElementById("numpad")
-        pad.innerHTML = "" # Clear pad on re-init
-        for i in range(1, 10):
-            btn = document.createElement("button")
-            btn.className = "num-btn"
-            btn.innerText = str(i)
-            btn.onclick = lambda e, val=i: game.set_num(val)
-            pad.appendChild(btn)
+        body { font-family: 'Inter', sans-serif; text-align: center; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+        h2 { letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
         
-        btn_clear = document.createElement("button")
-        btn_clear.className = "num-btn clear"
-        btn_clear.innerText = "C"
-        btn_clear.onclick = lambda e: game.set_num(0)
-        pad.appendChild(btn_clear)
+        /* 游戏容器 */
+        .game-wrap { display: inline-block; position: relative; }
 
-    init_numpad()
-    document.getElementById("restart").onclick = lambda e: game.reset()
-</script>
+        /* 数独网格 */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            max-width: 380px;
+            margin: 10px auto;
+            background: white;
+            border-top: var(--border-thick);
+            border-left: var(--border-thick);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            box-sizing: border-box;
+            border-right: var(--border-thin);
+            border-bottom: var(--border-thin);
+            user-select: none;
+        }
+
+        /* 加粗 3x3 宫边界 */
+        .cell:nth-child(3n) { border-right: var(--border-thick); }
+        .cell:nth-child(9n) { border-right: var(--border-thick); }
+        #grid .cell:nth-child(n+19):nth-child(-n+27),
+        #grid .cell:nth-child(n+46):nth-child(-n+54),
+        #grid .cell:nth-child(n+73):nth-child(-n+81) {
+            border-bottom: var(--border-thick);
+        }
+
+        .cell.fixed { background: #f1f5f9; font-weight: 800; color: #000; cursor: default; }
+        .cell.selected { background: #dbeafe; outline: 3px solid var(--primary); z-index: 5; }
+        .cell:hover:not(.fixed) { background: #eff6ff; }
+
+        /* 数字键盘 */
+        .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 380px; margin: 20px auto; gap: 8px; }
+        .num-btn { 
+            padding: 12px; background: white; border: 1px solid #cbd5e1; 
+            border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .num-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .num-btn.clear { color: #ef4444; }
+
+        .btn-restart { 
+            margin-top: 10px; padding: 12px 40px; background: #1e293b; color: white; 
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* 加载提示 */
+        #loading { font-size: 14px; color: #64748b; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>SUDOKU PRO</h2>
+    <div id="loading">Initializing Python Engine...</div>
+
+    <div class="game-wrap">
+        <div id="grid"></div>
+        <div class="num-pad" id="numpad"></div>
+        <button class="btn-restart" id="restart">New Game</button>
+    </div>
+
+    <script type="py">
+        from pyscript import document
+        import random
+
+        class Sudoku:
+            def __init__(self):
+                self.selected_cell = None
+                self.reset()
+
+            def is_valid(self, board, r, c, n):
+                for i in range(9):
+                    if board[r][i] == n: return False
+                    if board[i][c] == n: return False
+                
+                sr, sc = 3 * (r // 3), 3 * (c // 3)
+                for i in range(3):
+                    for j in range(3):
+                        if board[sr + i][sc + j] == n: return False
+                return True
+
+            def solve(self, board):
+                for r in range(9):
+                    for c in range(9):
+                        if board[r][c] == 0:
+                            nums = list(range(1, 10))
+                            random.shuffle(nums)
+                            for n in nums:
+                                if self.is_valid(board, r, c, n):
+                                    board[r][c] = n
+                                    if self.solve(board): return True
+                                    board[r][c] = 0
+                            return False
+                return True
+
+            def generate_puzzle(self):
+                # 1. 创建完整解
+                board = [[0 for _ in range(9)] for _ in range(9)]
+                self.solve(board)
+                
+                # 2. 随机挖洞 (挖掉 45 个数字，难度适中)
+                puzzle = [row[:] for row in board]
+                cells = [(r, c) for r in range(9) for c in range(9)]
+                random.shuffle(cells)
+                
+                for i in range(45):
+                    r, c = cells[i]
+                    puzzle[r][c] = 0
+                return puzzle
+
+            def reset(self):
+                document.getElementById("loading").innerText = "Generating random map..."
+                self.board = self.generate_puzzle()
+                self.fixed = [[bool(c) for c in r] for r in self.board]
+                self.selected_cell = None
+                self.render()
+                document.getElementById("loading").innerText = "Game Ready!"
+
+            def render(self):
+                grid_div = document.getElementById("grid")
+                grid_div.innerHTML = ""
+                for r in range(9):
+                    for c in range(9):
+                        cell = document.createElement("div")
+                        cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
+                        if (r, c) == self.selected_cell: 
+                            cell.classList.add("selected")
+                        
+                        val = self.board[r][c]
+                        cell.innerText = str(val) if val else ""
+                        
+                        # 使用闭包传递坐标
+                        def make_handler(curr_r, curr_c):
+                            def handler(e):
+                                if not self.fixed[curr_r][curr_c]:
+                                    self.selected_cell = (curr_r, curr_c)
+                                    self.render()
+                            return handler
+                            
+                        cell.onclick = make_handler(r, c)
+                        grid_div.appendChild(cell)
+
+            def set_num(self, n):
+                if self.selected_cell:
+                    r, c = self.selected_cell
+                    self.board[r][c] = n
+                    self.render()
+
+        # 启动实例
+        game = Sudoku()
+
+        def init_controls():
+            pad = document.getElementById("numpad")
+            # 1-9 数字
+            for i in range(1, 10):
+                btn = document.createElement("button")
+                btn.className = "num-btn"
+                btn.innerText = str(i)
+                # 闭包处理数字输入
+                def make_input_fn(val):
+                    return lambda e: game.set_num(val)
+                btn.onclick = make_input_fn(i)
+                pad.appendChild(btn)
+            
+            # 清除按钮
+            btn_clear = document.createElement("button")
+            btn_clear.className = "num-btn clear"
+            btn_clear.innerText = "C"
+            btn_clear.onclick = lambda e: game.set_num(0)
+            pad.appendChild(btn_clear)
+
+        # 绑定重置按钮
+        def on_restart(e):
+            game.reset()
+
+        document.getElementById("restart").onclick = on_restart
+        init_controls()
+    </script>
+</body>
+</html>
