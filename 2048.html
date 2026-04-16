@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Open Source 2048 - Python</title>
+    <title>2048 Open Source Python</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
         :root {
@@ -17,179 +17,144 @@
         body {
             background: var(--bg-color);
             color: var(--text-dark);
-            font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            touch-action: none; /* 禁用默认手势 */
+            font-family: "Clear Sans", Arial, sans-serif;
+            margin: 0; display: flex; flex-direction: column; align-items: center;
+            touch-action: none; /* 关键：禁止浏览器默认滑动 */
         }
 
-        .container { width: 90vw; max-width: 400px; margin-top: 20px; }
-
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .score-box { background: var(--grid-bg); padding: 5px 15px; border-radius: 5px; color: white; text-align: center; }
-        .score-label { font-size: 12px; text-transform: uppercase; }
-        .score-val { font-size: 20px; font-weight: bold; }
+        .header { width: 320px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+        .score-box { background: var(--grid-bg); padding: 5px 20px; border-radius: 6px; color: white; text-align: center; }
 
         #grid {
-            width: 90vw; height: 90vw; max-width: 400px; max-height: 400px;
-            background: var(--grid-bg);
-            border-radius: 6px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            gap: 10px;
-            padding: 10px;
-            box-sizing: border-box;
+            width: 320px; height: 320px; background: var(--grid-bg);
+            border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 12px; padding: 12px; box-sizing: border-box;
         }
 
         .cell {
-            background: var(--cell-empty);
-            border-radius: 3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: bold;
-            transition: transform 0.1s, background-color 0.1s;
+            width: 65px; height: 65px; background: var(--cell-empty);
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: bold; transition: all 0.1s ease;
         }
 
-        /* 2048 开源经典配色 */
+        /* 经典 2048 配色表 */
         .n-2 { background: #eee4da; color: var(--text-dark); }
         .n-4 { background: #ede0c8; color: var(--text-dark); }
-        .n-8 { background: #f2b179; color: var(--text-light); }
-        .n-16 { background: #f59563; color: var(--text-light); }
-        .n-32 { background: #f67c5f; color: var(--text-light); }
-        .n-64 { background: #f65e3b; color: var(--text-light); }
-        .n-128 { background: #edcf72; color: var(--text-light); font-size: 24px; }
-        .n-256 { background: #edcc61; color: var(--text-light); font-size: 24px; }
-        .n-512 { background: #edc850; color: var(--text-light); font-size: 24px; }
-        .n-1024 { background: #edc53f; color: var(--text-light); font-size: 18px; }
-        .n-2048 { background: #edc22e; color: var(--text-light); font-size: 18px; }
+        .n-8 { background: #f2b179; color: white; }
+        .n-16 { background: #f59563; color: white; }
+        .n-32 { background: #f67c5f; color: white; }
+        .n-64 { background: #f65e3b; color: white; }
+        .n-128 { background: #edcf72; color: white; font-size: 20px; }
+        .n-256 { background: #edcc61; color: white; font-size: 20px; }
+        .n-512 { background: #edc850; color: white; font-size: 20px; }
+        .n-1024 { background: #edc53f; color: white; font-size: 16px; }
+        .n-2048 { background: #edc22e; color: white; font-size: 16px; }
 
-        .controls { margin-top: 20px; }
-        .restart-btn {
-            background: #8f7a66; color: white; border: none; padding: 10px 20px;
-            border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 18px;
-        }
+        .btn { margin-top: 20px; padding: 10px 30px; background: #8f7a66; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h1 style="font-size: 48px; margin: 0;">2048</h1>
-            <div class="score-box">
-                <div class="score-label">SCORE</div>
-                <div id="score" class="score-val">0</div>
-            </div>
-        </div>
-        
-        <div id="grid"></div>
-
-        <div class="controls">
-            <button class="restart-btn" id="restart">New Game</button>
+    <div class="header">
+        <h1 style="font-size: 40px; margin: 0;">2048</h1>
+        <div class="score-box">
+            <div style="font-size: 12px;">SCORE</div>
+            <div id="score" style="font-size: 20px; font-weight: bold;">0</div>
         </div>
     </div>
+
+    <div id="grid"></div>
+
+    <button class="btn" id="restart">重新开始</button>
 
     <script type="py">
         from pyscript import document, window
         import random
 
-        class Game2048:
+        class Game:
             def __init__(self):
-                self.grid = [[0]*4 for _ in range(4)]
+                self.board = [[0]*4 for _ in range(4)]
                 self.score = 0
-                self.start_game()
+                self.reset()
 
-            def start_game(self):
-                self.grid = [[0]*4 for _ in range(4)]
+            def reset(self):
+                self.board = [[0]*4 for _ in range(4)]
                 self.score = 0
-                self.add_new_tile()
-                self.add_new_tile()
+                self.add_tile()
+                self.add_tile()
                 self.render()
 
-            def add_new_tile(self):
-                empty_cells = [(r, c) for r in range(4) for c in range(4) if self.grid[r][c] == 0]
-                if empty_cells:
-                    r, c = random.choice(empty_cells)
-                    self.grid[r][c] = 2 if random.random() < 0.9 else 4
-
-            def compress(self, row):
-                new_row = [i for i in row if i != 0]
-                new_row += [0] * (4 - len(new_row))
-                return new_row
-
-            def merge(self, row):
-                for i in range(3):
-                    if row[i] != 0 and row[i] == row[i+1]:
-                        row[i] *= 2
-                        self.score += row[i]
-                        row[i+1] = 0
-                return row
-
-            def move_left(self):
-                old_grid = [r[:] for r in self.grid]
-                for i in range(4):
-                    res = self.compress(self.grid[i])
-                    res = self.merge(res)
-                    self.grid[i] = self.compress(res)
-                return old_grid != self.grid
-
-            def rotate_grid(self):
-                self.grid = [list(row) for row in zip(*self.grid[::-1])]
-
-            def move(self, direction):
-                # 0:left, 1:down, 2:right, 3:up (与你之前的逻辑一致)
-                changed = False
-                for _ in range(direction):
-                    self.rotate_grid()
-                
-                changed = self.move_left()
-                
-                for _ in range((4 - direction) % 4):
-                    self.rotate_grid()
-                
-                if changed:
-                    self.add_new_tile()
-                    self.render()
-                    if self.is_game_over():
-                        window.alert(f"游戏结束！最终得分: {self.score}")
-
-            def is_game_over(self):
-                # 检查是否有空位
-                if any(0 in row for row in self.grid): return False
-                # 检查水平/垂直是否有可合并项
-                for r in range(4):
-                    for c in range(3):
-                        if self.grid[r][c] == self.grid[r][c+1] or self.grid[c][r] == self.grid[c+1][r]:
-                            return False
-                return True
+            def add_tile(self):
+                empty = [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
+                if empty:
+                    r, c = random.choice(empty)
+                    self.board[r][c] = 2 if random.random() < 0.9 else 4
 
             def render(self):
                 grid_div = document.getElementById("grid")
                 grid_div.innerHTML = ""
                 for r in range(4):
                     for c in range(4):
-                        val = self.grid[r][c]
+                        val = self.board[r][c]
                         cell = document.createElement("div")
                         cell.className = f"cell n-{val}" if val else "cell"
                         cell.innerText = str(val) if val else ""
                         grid_div.appendChild(cell)
                 document.getElementById("score").innerText = str(self.score)
 
-        # 初始化游戏
-        game = Game2048()
+            def _merge_row(self, row):
+                # 开源经典合并逻辑：先挤压 -> 合并 -> 再挤压
+                non_zeros = [x for x in row if x != 0]
+                new_row = []
+                skip = False
+                for i in range(len(non_zeros)):
+                    if skip:
+                        skip = False
+                        continue
+                    if i + 1 < len(non_zeros) and non_zeros[i] == non_zeros[i+1]:
+                        val = non_zeros[i] * 2
+                        new_row.append(val)
+                        self.score += val
+                        skip = True
+                    else:
+                        new_row.append(non_zeros[i])
+                return new_row + [0] * (4 - len(new_row))
 
-        # 事件监听
+            def move(self, direction):
+                # 0:left, 1:down, 2:right, 3:up
+                # 旋转法简化逻辑：把所有方向都转换成“向左移动”
+                def rotate(matrix):
+                    return [list(row) for row in zip(*matrix[::-1])]
+
+                new_board = [r[:] for r in self.board]
+                for _ in range(direction):
+                    new_board = rotate(new_board)
+
+                changed = False
+                for i in range(4):
+                    merged = self._merge_row(new_board[i])
+                    if merged != new_board[i]:
+                        changed = True
+                    new_board[i] = merged
+
+                for _ in range((4 - direction) % 4):
+                    new_board = rotate(new_board)
+
+                if changed:
+                    self.board = new_board
+                    self.add_tile()
+                    self.render()
+
+        game = Game()
+
+        # PC 端键盘控制
         def on_keydown(e):
-            keys = {"ArrowLeft": 0, "ArrowDown": 1, "ArrowRight": 2, "ArrowUp": 3}
-            if e.key in keys:
+            d = {"ArrowLeft": 0, "ArrowDown": 1, "ArrowRight": 2, "ArrowUp": 3}
+            if e.key in d:
                 e.preventDefault()
-                game.move(keys[e.key])
+                game.move(d[e.key])
 
-        # 触摸逻辑
+        # 移动端滑动控制
         ts_x, ts_y = 0, 0
         def on_touchstart(e):
             global ts_x, ts_y
@@ -197,9 +162,8 @@
             ts_y = e.touches.item(0).clientY
 
         def on_touchend(e):
-            te_x = e.changedTouches.item(0).clientX
-            te_y = e.changedTouches.item(0).clientY
-            dx, dy = te_x - ts_x, te_y - ts_y
+            dx = e.changedTouches.item(0).clientX - ts_x
+            dy = e.changedTouches.item(0).clientY - ts_y
             if abs(dx) > 30 or abs(dy) > 30:
                 if abs(dx) > abs(dy):
                     game.move(0 if dx < 0 else 2)
@@ -209,7 +173,7 @@
         document.addEventListener("keydown", on_keydown)
         document.addEventListener("touchstart", on_touchstart)
         document.addEventListener("touchend", on_touchend)
-        document.getElementById("restart").onclick = lambda e: game.start_game()
+        document.getElementById("restart").onclick = lambda e: game.reset()
     </script>
 </body>
 </html>
