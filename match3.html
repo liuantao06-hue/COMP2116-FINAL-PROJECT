@@ -1,58 +1,77 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Match 3 - Python Pro</title>
+    <title>Match 3 - Jewel Blast</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        :root { --bg: #1a1a2e; --panel: #16213e; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; overflow: hidden; touch-action: manipulation; }
-        .stat-bar { background: var(--panel); padding: 15px; border-radius: 12px; display: flex; justify-content: space-around; max-width: 400px; margin: 10px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        :root { --bg: #0f172a; --panel: #1e293b; --primary: #6366f1; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; text-align: center; margin: 0; padding: 10px; overflow: hidden; touch-action: manipulation; }
         
+        .stat-bar { 
+            background: var(--panel); padding: 15px; border-radius: 16px; 
+            display: flex; justify-content: space-around; max-width: 400px; 
+            margin: 10px auto; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-item { display: flex; flex-direction: column; }
+        .label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 20px; font-weight: bold; }
+
         #game-grid { 
             display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; 
-            max-width: 400px; margin: 20px auto; background: rgba(255,255,255,0.05); 
-            padding: 8px; border-radius: 12px; position: relative;
+            max-width: 400px; margin: 20px auto; background: rgba(255,255,255,0.03); 
+            padding: 10px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.05);
         }
         
         .gem { 
-            aspect-ratio: 1; border-radius: 20%; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            display: flex; align-items: center; justify-content: center; font-size: 24px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            aspect-ratio: 1; border-radius: 25%; cursor: pointer; 
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 -4px 6px rgba(0,0,0,0.2);
         }
-        .gem:active { transform: scale(0.9); }
-        .gem.selected { transform: scale(1.1); box-shadow: 0 0 15px #fff; outline: 3px solid white; z-index: 10; }
+        .gem.selected { transform: scale(1.15); box-shadow: 0 0 20px #fff; outline: 3px solid white; z-index: 10; }
         
-        /* 宝石颜色：使用更有质感的渐变 */
-        .g-0 { background: linear-gradient(135deg, #ff6b6b, #ee5253); }
-        .g-1 { background: linear-gradient(135deg, #48dbfb, #2e86de); }
-        .g-2 { background: linear-gradient(135deg, #1dd1a1, #10ac84); }
-        .g-3 { background: linear-gradient(135deg, #feca57, #ff9f43); }
-        .g-4 { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
-        .g-5 { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+        /* High-quality gradients for Gems */
+        .g-0 { background: linear-gradient(135deg, #ff6b6b, #ee5253); } /* Red */
+        .g-1 { background: linear-gradient(135deg, #48dbfb, #2e86de); } /* Blue */
+        .g-2 { background: linear-gradient(135deg, #1dd1a1, #10ac84); } /* Green */
+        .g-3 { background: linear-gradient(135deg, #feca57, #ff9f43); } /* Orange */
+        .g-4 { background: linear-gradient(135deg, #a29bfe, #6c5ce7); } /* Purple */
+        .g-5 { background: linear-gradient(135deg, #ff9ff3, #f368e0); } /* Pink */
 
         .btn-restart { 
-            background: #ff4757; color: white; border: none; padding: 12px 30px; 
-            border-radius: 25px; font-weight: bold; font-size: 16px; cursor: pointer;
-            margin-top: 20px; transition: 0.3s;
+            background: var(--primary); color: white; border: none; padding: 12px 40px; 
+            border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer;
+            margin-top: 10px; transition: 0.3s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
-        .btn-restart:hover { background: #ff6b81; transform: scale(1.05); }
+        .btn-restart:hover { transform: translateY(-2px); filter: brightness(1.1); }
         
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="loading">Python 环境初始化中...</div>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div style="letter-spacing: 2px;">LOADING ENGINE...</div>
+    </div>
 
     <div class="stat-bar">
-        <div>得分: <b id="score">0</b></div>
-        <div>目标: <b>1000</b></div>
+        <div class="stat-item">
+            <span class="label">Score</span>
+            <span id="score" class="value">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="label">Target</span>
+            <span class="value">2500</span>
+        </div>
     </div>
 
     <div id="game-grid"></div>
     
-    <button class="btn-restart" id="restart">再来一局</button>
+    <button class="btn-restart" id="restart">RESTART GAME</button>
 
     <script type="py">
         from pyscript import document, window
@@ -72,25 +91,26 @@
             is_animating = False
             document.getElementById("score").innerText = "0"
             
-            # 初始化棋盘，确保初始无三连
-            board = [[random.randint(0, TYPES-1) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
-            while find_matches():
+            # Init board without pre-existing matches
+            while True:
                 board = [[random.randint(0, TYPES-1) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+                if not find_matches():
+                    break
             
             render_board()
             document.getElementById("loading").style.display = "none"
 
         def find_matches():
             matches = set()
-            # 横向检查
+            # Horizontal check
             for r in range(GRID_SIZE):
                 for c in range(GRID_SIZE - 2):
-                    if board[r][c] == board[r][c+1] == board[r][c+2]:
+                    if board[r][c] == board[r][c+1] == board[r][c+2] and board[r][c] != -1:
                         matches.update({(r, c), (r, c+1), (r, c+2)})
-            # 纵向检查
+            # Vertical check
             for c in range(GRID_SIZE):
                 for r in range(GRID_SIZE - 2):
-                    if board[r][c] == board[r+1][c] == board[r+2][c]:
+                    if board[r][c] == board[r+1][c] == board[r+2][c] and board[r][c] != -1:
                         matches.update({(r, c), (r+1, c), (r+2, c)})
             return list(matches)
 
@@ -100,11 +120,13 @@
             for r in range(GRID_SIZE):
                 for c in range(GRID_SIZE):
                     gem = document.createElement("div")
-                    gem.className = f"gem g-{board[r][c]}"
+                    val = board[r][c]
+                    gem.className = f"gem g-{val}" if val != -1 else "gem"
+                    if val == -1: gem.style.opacity = "0"
+                    
                     if selected == (r, c):
                         gem.classList.add("selected")
                     
-                    # 使用闭包正确绑定坐标
                     def make_handler(row, col):
                         async def handler(e):
                             await handle_click(row, col)
@@ -124,7 +146,7 @@
                 r1, c1 = selected
                 if abs(r-r1) + abs(c-c1) == 1:
                     is_animating = True
-                    # 交换逻辑
+                    # Swap
                     board[r][c], board[r1][c1] = board[r1][c1], board[r][c]
                     selected = None
                     render_board()
@@ -132,7 +154,7 @@
                     await asyncio.sleep(0.3)
                     
                     if not await process_logic():
-                        # 换回来
+                        # Swap back if no matches
                         board[r][c], board[r1][c1] = board[r1][c1], board[r][c]
                         render_board()
                     
@@ -152,13 +174,13 @@
                 score += len(matches) * 10
                 document.getElementById("score").innerText = str(score)
                 
-                # 消除
+                # Clear matches
                 for r, c in matches:
                     board[r][c] = -1
                 render_board()
                 await asyncio.sleep(0.3)
                 
-                # 下落
+                # Drop gems
                 for c in range(GRID_SIZE):
                     write_idx = GRID_SIZE - 1
                     for r in range(GRID_SIZE - 1, -1, -1):
@@ -172,8 +194,8 @@
                 await asyncio.sleep(0.3)
             return had_matches
 
-        # 启动与重新开始
         async def restart_game(e):
+            document.getElementById("loading").style.display = "flex"
             await init_game()
 
         document.getElementById("restart").onclick = restart_game
