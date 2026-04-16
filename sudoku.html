@@ -7,8 +7,55 @@
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 10px; }
-        #grid { display: grid; grid-template-columns: repeat(9, 1fr); max-width: 360px; margin: 10px auto; border: 2px solid #333; background: #333; gap: 1px; }
-        .cell { width: 40px; height: 40px; background: white; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
+
+        /* 优化后的 Sudoku 网格样式 */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            max-width: 360px;
+            margin: 10px auto;
+            background: white; /* 单元格背景 */
+            /* 1. 设置最外层的大边框 (顶和左) */
+            border-top: 3px solid #333;
+            border-left: 3px solid #333;
+            gap: 0; /* 取消 Gap，改用边框控制 */
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            box-sizing: border-box; /* 确保边框在 40px 之内 */
+
+            /* 2. 默认所有单元格的细边框 (底和右) */
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+        }
+
+        /* 3. 使用 CSS nth-child 选择器加粗 3x3 宫的边框 */
+
+        /* 加粗所有宫的右边界 (第 3, 6, 9 列) */
+        .cell:nth-child(3n) {
+            border-right: 3px solid #333;
+        }
+        /* 加粗最后一列的右边界 (虽然上面设置了，但加上更明确) */
+        .cell:nth-child(9n) {
+            border-right: 3px solid #333;
+        }
+
+        /* 加粗所有宫的下边界 (第 3, 6, 9 行的单元格) */
+        /* 这里的选择器是：选择索引为 19-27, 46-54, 73-81 的元素 */
+        #grid .cell:nth-child(n+19):nth-child(-n+27),
+        #grid .cell:nth-child(n+46):nth-child(-n+54),
+        #grid .cell:nth-child(n+73):nth-child(-n+81) {
+            border-bottom: 3px solid #333;
+        }
+
+        /* 之前的逻辑样式保持不变 */
         .cell.fixed { background: #eee; font-weight: bold; color: #111; }
         .cell.selected { background: #bbdefb; }
         .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 360px; margin: 20px auto; gap: 5px; }
@@ -23,6 +70,7 @@
     <button class="btn-action" id="restart">再来一局</button>
 
     <script type="py">
+        # Python 代码无需修改
         from pyscript import document
         import random
 
@@ -32,7 +80,7 @@
                 self.reset()
 
             def reset(self):
-                # 简化版生成：这里用一个预设谜题演示，真实环境可写完整递归生成
+                # 简化版生成：这里用一个预设谜题演示
                 self.board = [
                     [5,3,0,0,7,0,0,0,0], [6,0,0,1,9,5,0,0,0], [0,9,8,0,0,0,0,6,0],
                     [8,0,0,0,6,0,0,0,3], [4,0,0,8,0,3,0,0,1], [7,0,0,0,2,0,0,0,6],
