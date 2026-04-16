@@ -3,36 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2048 Python Fix</title>
+    <title>2048 Python Cross-Platform</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        body { background: #faf8ef; color: #776e65; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; }
-        .score-container { background: #bbada0; padding: 10px 25px; border-radius: 6px; color: white; margin: 10px; }
-        #grid { width: 320px; height: 320px; background: #bbada0; border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; }
-        .cell { background: rgba(238, 228, 218, 0.35); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
-        .n-2 { background: #eee4da; } .n-4 { background: #ede0c8; } .n-8 { background: #f2b179; color: white; }
-        .n-16 { background: #f59563; color: white; } .n-32 { background: #f67c5f; color: white; }
-        .btn { margin: 10px; padding: 10px 20px; background: #8f7a66; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; }
+        body { background: #faf8ef; color: #776e65; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; overflow: hidden; touch-action: none; }
+        .header { display: flex; justify-content: space-between; width: 320px; align-items: center; margin-bottom: 10px; }
+        .score-container { background: #bbada0; padding: 10px 20px; border-radius: 6px; color: white; font-weight: bold; }
+        #grid { width: 300px; height: 300px; background: #bbada0; border-radius: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; position: relative; }
+        .cell { background: rgba(238, 228, 218, 0.35); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; transition: all 0.1s ease; }
+        /* 颜色增强 */
+        .n-2 { background: #eee4da; color: #776e65; } .n-4 { background: #ede0c8; color: #776e65; }
+        .n-8 { background: #f2b179; color: white; } .n-16 { background: #f59563; color: white; }
+        .n-32 { background: #f67c5f; color: white; } .n-64 { background: #f65e3b; color: white; }
+        .n-128 { background: #edcf72; color: white; font-size: 20px; } .n-256 { background: #edcc61; color: white; font-size: 20px; }
+        
+        .btn { padding: 10px 20px; background: #8f7a66; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .hint { margin-top: 15px; font-size: 14px; color: #999; }
     </style>
 </head>
 <body>
-    <div class="score-container">分数: <span id="score">0</span></div>
-    <div id="grid"></div>
-    <div class="controls">
-        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp'}))">↑</button><br>
-        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))">←</button>
-        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowDown'}))">↓</button>
-        <button class="btn" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))">→</button>
+    <div class="header">
+        <h1 style="margin:0; font-size: 32px;">2048</h1>
+        <div class="score-container">得分: <span id="score">0</span></div>
     </div>
-    <button class="btn" id="restart">再来一局</button>
+
+    <div id="grid"></div>
+
+    <div style="margin-top: 20px;">
+        <button class="btn" id="restart">重置游戏</button>
+    </div>
+
+    <p class="hint">电脑按箭头键，手机直接滑动屏幕</p>
 
     <script type="py">
-        from pyscript import document
+        from pyscript import document, window
         import random
 
         board = [[0]*4 for _ in range(4)]
         score = 0
+        
+        # 记录触摸坐标
+        touch_start_x = 0
+        touch_start_y = 0
 
         def init_game():
             global board, score
@@ -89,12 +101,49 @@
                 add_tile()
                 render()
 
+        # 键盘事件
         def on_key(e):
             d = {"ArrowLeft":0, "ArrowDown":1, "ArrowRight":2, "ArrowUp":3}
             if e.key in d:
                 e.preventDefault()
                 move(d[e.key])
 
+        # 触摸开始
+        def on_touch_start(e):
+            global touch_start_x, touch_start_y
+            touch_start_x = e.touches.item(0).clientX
+            touch_start_y = e.touches.item(0).clientY
+
+        # 触摸结束：判断滑动方向
+        def on_touch_end(e):
+            global touch_start_x, touch_start_y
+            end_x = e.changedTouches.item(0).clientX
+            end_y = e.changedTouches.item(0).clientY
+            
+            dx = end_x - touch_start_x
+            dy = end_y - touch_start_y
+            
+            # 设置滑动阈值，防止误触
+            if abs(dx) < 30 and abs(dy) < 30:
+                return
+
+            if abs(dx) > abs(dy):
+                # 横向滑动
+                move(0 if dx < 0 else 2)
+            else:
+                # 纵向滑动
+                move(3 if dy < 0 else 1)
+
+        # 绑定事件
+        document.addEventListener("keydown", on_key)
+        document.addEventListener("touchstart", on_touch_start)
+        document.addEventListener("touchend", on_touch_end)
+        document.getElementById("restart").onclick = lambda e: init_game()
+        
+        init_game()
+    </script>
+</body>
+</html>
         document.addEventListener("keydown", on_key)
         document.getElementById("restart").onclick = lambda e: init_game()
         init_game()
