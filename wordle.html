@@ -1,66 +1,87 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wordle Pro - 带有提示</title>
+    <title>Wordle Python</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        :root { --green: #538d4e; --yellow: #b59f3b; --gray: #3a3a3c; --bg: #121213; }
-        body { background: var(--bg); color: white; text-align: center; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        h1 { margin-bottom: 5px; letter-spacing: 2px; }
+        :root {
+            --green: #6aaa64;
+            --yellow: #c9b458;
+            --gray: #787c7e;
+            --border: #d3d6da;
+            --bg: #ffffff;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
         
-        #board { display: flex; flex-direction: column; gap: 5px; margin: 20px auto; max-width: 300px; }
-        .row { display: flex; gap: 5px; justify-content: center; }
-        .tile { width: 50px; height: 50px; border: 2px solid #3a3a3c; display: flex; align-items: center; justify-content: center; 
-                font-size: 24px; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
-        
-        .input-area { margin-top: 30px; }
-        input { padding: 12px; background: #272729; color: white; border: 2px solid #3a3a3c; border-radius: 8px; 
-                font-size: 18px; width: 160px; text-transform: uppercase; text-align: center; outline: none; }
-        input:focus { border-color: #818cf8; }
-        
-        .controls { margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-submit { background: var(--green); color: white; }
-        .btn-hint { background: #818cf8; color: white; }
-        .btn-restart { background: #4b5563; color: white; }
-        .btn:active { transform: scale(0.95); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        h2 { color: #1a1a1b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
 
-        #msg { margin-top: 20px; height: 24px; color: #818cf8; font-weight: bold; }
-        .hint-text { color: #fca5a5; font-size: 0.9rem; margin-top: 10px; }
+        /* Board Styling */
+        #board { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+        .row { display: flex; gap: 5px; }
+        .tile {
+            width: 50px; height: 50px; border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; text-transform: uppercase;
+            color: white; border-radius: 4px;
+            animation: pop 0.2s linear;
+        }
+        @keyframes pop { 50% { transform: scale(1.1); } }
+
+        /* Input Controls */
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        input { 
+            padding: 12px; font-size: 18px; border: 2px solid var(--border); 
+            border-radius: 4px; width: 150px; text-align: center; text-transform: uppercase;
+            outline: none;
+        }
+        input:focus { border-color: #888; }
+        
+        .btn-group { display: flex; gap: 10px; }
+        button { 
+            padding: 10px 20px; border: none; border-radius: 4px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        #submit-btn { background: #1a1a1b; color: white; }
+        #submit-btn:hover { background: #333; }
+        #hint-btn { background: #efefef; color: #1a1a1b; border: 1px solid #ccc; }
+        #restart { background: #6aaa64; color: white; margin-top: 10px; }
+
+        #msg { margin-top: 20px; font-weight: bold; color: #1a1a1b; height: 24px; }
+        #hint-msg { font-size: 14px; color: var(--gray); margin-top: 5px; }
     </style>
 </head>
 <body>
-    <h1>WORDLE</h1>
+
+    <h2>Wordle</h2>
+
     <div id="board"></div>
 
-    <div class="input-area">
-        <input type="text" id="guess-input" maxlength="5" placeholder="输入单词..." autocomplete="off">
-    </div>
-
     <div class="controls">
-        <button class="btn btn-submit" id="submit-btn">提交</button>
-        <button class="btn btn-hint" id="hint-btn">获取提示</button>
-        <button class="btn btn-restart" id="restart">再来一局</button>
+        <input type="text" id="guess-input" maxlength="5" placeholder="5 Letters" autocomplete="off">
+        <div class="btn-group">
+            <button id="submit-btn">ENTER</button>
+            <button id="hint-btn">HINT</button>
+        </div>
+        <div id="msg"></div>
+        <div id="hint-msg"></div>
+        <button id="restart" style="display: none;">PLAY AGAIN</button>
     </div>
-
-    <div id="msg"></div>
-    <div id="hint-msg" class="hint-text"></div>
 
     <script type="py">
-        from pyscript import document
+        from pyscript import document, window
         import random
 
-        WORDS = ["APPLE", "BEACH", "BRAIN", "CLOUD", "DREAM", "EARTH", "FLOWER", "GRAPE", "HOUSE", "IMAGE", "JUICE", "KNIFE", "LIGHT", "MUSIC", "NIGHT", "OCEAN", "PIANO", "QUEEN", "RIVER", "SMILE", "TIGER", "WATER", "YOUNG", "ZEBRA"]
+        # Simple word list
+        WORDS = ["APPLE", "BEACH", "BRAIN", "CLOUD", "DREAM", "FLAME", "GRAPE", "HEART", "LIGHT", "MUSIC", "OCEAN", "PIZZA", "SMILE", "TIGER", "WATER", "WORLD", "YOUNG"]
         target = ""
         attempts = 0
         hints_used = 0
 
         def start_game():
             global target, attempts, hints_used
-            target = random.choice(WORDS).upper()
+            target = random.choice(WORDS)
             attempts = 0
             hints_used = 0
             document.getElementById("board").innerHTML = ""
@@ -68,31 +89,34 @@
             document.getElementById("hint-msg").innerText = ""
             document.getElementById("guess-input").disabled = False
             document.getElementById("guess-input").value = ""
-            document.getElementById("hint-btn").disabled = False
-            # 自动聚焦
             document.getElementById("guess-input").focus()
+            document.getElementById("hint-btn").disabled = False
+            document.getElementById("restart").style.display = "none"
+            document.getElementById("submit-btn").disabled = False
 
         def submit_guess(e=None):
             global attempts
-            inp = document.getElementById("guess-input")
-            guess = inp.value.upper()
+            guess_input = document.getElementById("guess-input")
+            guess = guess_input.value.upper()
+            
             if len(guess) != 5:
-                document.getElementById("msg").innerText = "请输入5位单词"
+                document.getElementById("msg").innerText = "Must be 5 letters!"
                 return
             
             document.getElementById("msg").innerText = ""
-            inp.value = ""
             row = document.createElement("div")
             row.className = "row"
             
             for i in range(5):
                 tile = document.createElement("div")
                 tile.className = "tile"
-                tile.innerText = guess[i]
-                if guess[i] == target[i]:
+                char = guess[i]
+                tile.innerText = char
+                
+                if char == target[i]:
                     tile.style.background = "var(--green)"
                     tile.style.borderColor = "var(--green)"
-                elif guess[i] in target:
+                elif char in target:
                     tile.style.background = "var(--yellow)"
                     tile.style.borderColor = "var(--yellow)"
                 else:
@@ -102,38 +126,36 @@
             
             document.getElementById("board").appendChild(row)
             attempts += 1
+            guess_input.value = ""
+            guess_input.focus()
             
             if guess == target:
-                document.getElementById("msg").innerText = f"太棒了！第 {attempts} 次就猜对了！🎉"
+                document.getElementById("msg").innerText = f"Splendid! {attempts} tries! 🎉"
                 end_game()
             elif attempts >= 6:
-                document.getElementById("msg").innerText = f"可惜！答案是: {target}"
+                document.getElementById("msg").innerText = f"Game Over! Answer: {target}"
                 end_game()
 
         def get_hint(e):
             global hints_used
-            if hints_used >= 3:
-                document.getElementById("hint-msg").innerText = "提示机会已用完（上限3次）"
-                return
-            
-            # 随机选一个还没被猜出的位置（或者直接选位置）
-            pos = random.randint(0, 4)
-            letter = target[pos]
-            hints_used += 1
-            document.getElementById("hint-msg").innerText = f"提示 #{hints_used}: 第 {pos+1} 个字母是 '{letter}'"
+            if hints_used < 3:
+                pos = random.randint(0, 4)
+                letter = target[pos]
+                hints_used += 1
+                document.getElementById("hint-msg").innerText = f"Hint {hints_used}/3: Pos {pos+1} is '{letter}'"
             if hints_used >= 3:
                 document.getElementById("hint-btn").disabled = True
 
         def end_game():
             document.getElementById("guess-input").disabled = True
-            document.getElementById("hint-btn").disabled = True
+            document.getElementById("submit-btn").disabled = True
+            document.getElementById("restart").style.display = "block"
 
-        # 绑定点击
+        # Listeners
         document.getElementById("submit-btn").onclick = submit_guess
         document.getElementById("hint-btn").onclick = get_hint
         document.getElementById("restart").onclick = lambda e: start_game()
         
-        # 回车支持
         def handle_keypress(e):
             if e.key == "Enter":
                 submit_guess()
