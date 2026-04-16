@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wordle Python</title>
+    <title>Wordle Master</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
         :root {
@@ -11,155 +11,133 @@
             --yellow: #c9b458;
             --gray: #787c7e;
             --border: #d3d6da;
-            --bg: #ffffff;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        body { font-family: sans-serif; background: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         
-        h2 { color: #1a1a1b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
-
-        /* Board Styling */
         #board { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
         .row { display: flex; gap: 5px; }
         .tile {
             width: 50px; height: 50px; border: 2px solid var(--border);
             display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: bold; text-transform: uppercase;
-            color: white; border-radius: 4px;
-            animation: pop 0.2s linear;
+            color: white; border-radius: 4px; transition: 0.3s;
         }
-        @keyframes pop { 50% { transform: scale(1.1); } }
 
-        /* Input Controls */
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        input { 
-            padding: 12px; font-size: 18px; border: 2px solid var(--border); 
-            border-radius: 4px; width: 150px; text-align: center; text-transform: uppercase;
-            outline: none;
-        }
-        input:focus { border-color: #888; }
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        input { padding: 10px; font-size: 18px; border: 2px solid var(--border); border-radius: 4px; width: 160px; text-align: center; text-transform: uppercase; }
         
-        .btn-group { display: flex; gap: 10px; }
-        button { 
-            padding: 10px 20px; border: none; border-radius: 4px; 
-            font-weight: bold; cursor: pointer; transition: 0.2s;
-        }
-        #submit-btn { background: #1a1a1b; color: white; }
-        #submit-btn:hover { background: #333; }
-        #hint-btn { background: #efefef; color: #1a1a1b; border: 1px solid #ccc; }
-        #restart { background: #6aaa64; color: white; margin-top: 10px; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        #enter-btn { background: #1a1a1b; color: white; }
+        #restart-btn { background: var(--green); color: white; margin-top: 10px; display: none; }
 
-        #msg { margin-top: 20px; font-weight: bold; color: #1a1a1b; height: 24px; }
-        #hint-msg { font-size: 14px; color: var(--gray); margin-top: 5px; }
+        #msg { margin-top: 15px; font-weight: bold; text-align: center; }
+        .feedback { font-size: 14px; color: #555; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <h2>Wordle</h2>
+    <h2>WORDLE</h2>
 
     <div id="board"></div>
 
     <div class="controls">
-        <input type="text" id="guess-input" maxlength="5" placeholder="5 Letters" autocomplete="off">
-        <div class="btn-group">
-            <button id="submit-btn">ENTER</button>
-            <button id="hint-btn">HINT</button>
-        </div>
+        <input type="text" id="guess-input" maxlength="5" placeholder="GUESS" autocomplete="off">
+        <button id="enter-btn">SUBMIT</button>
         <div id="msg"></div>
-        <div id="hint-msg"></div>
-        <button id="restart" style="display: none;">PLAY AGAIN</button>
+        <div id="feedback-list" class="feedback"></div>
+        <button id="restart-btn">PLAY AGAIN</button>
     </div>
 
     <script type="py">
         from pyscript import document, window
         import random
 
-        # Simple word list
-        WORDS = ["APPLE", "BEACH", "BRAIN", "CLOUD", "DREAM", "FLAME", "GRAPE", "HEART", "LIGHT", "MUSIC", "OCEAN", "PIZZA", "SMILE", "TIGER", "WATER", "WORLD", "YOUNG"]
+        WORDS = ["APPLE", "BREAD", "CHASE", "DAILY", "EARTH", "FRUIT", "GLASS", "HOUSE", "INDEX", "JUDGE", "KNIFE", "LEMON", "MUSIC", "NIGHT", "OCEAN", "PAPER", "QUIET", "RADIO", "SMILE", "TABLE", "UNDER", "VOICE", "WATER", "YOUTH"]
         target = ""
         attempts = 0
-        hints_used = 0
 
         def start_game():
-            global target, attempts, hints_used
+            global target, attempts
             target = random.choice(WORDS)
             attempts = 0
-            hints_used = 0
             document.getElementById("board").innerHTML = ""
-            document.getElementById("msg").innerText = ""
-            document.getElementById("hint-msg").innerText = ""
+            document.getElementById("msg").innerText = "Type a 5-letter word"
+            document.getElementById("feedback-list").innerText = ""
             document.getElementById("guess-input").disabled = False
             document.getElementById("guess-input").value = ""
-            document.getElementById("guess-input").focus()
-            document.getElementById("hint-btn").disabled = False
-            document.getElementById("restart").style.display = "none"
-            document.getElementById("submit-btn").disabled = False
+            document.getElementById("restart-btn").style.display = "none"
+            document.getElementById("enter-btn").style.display = "block"
 
-        def submit_guess(e=None):
+        def check_guess(e=None):
             global attempts
-            guess_input = document.getElementById("guess-input")
-            guess = guess_input.value.upper()
+            inp = document.getElementById("guess-input")
+            guess = inp.value.upper()
             
             if len(guess) != 5:
-                document.getElementById("msg").innerText = "Must be 5 letters!"
+                document.getElementById("msg").innerText = "⚠️ Needs 5 letters!"
                 return
-            
-            document.getElementById("msg").innerText = ""
+
             row = document.createElement("div")
             row.className = "row"
             
+            # 统计目标单词中字母的数量，用于处理重复字母的黄色提示
+            target_chars = list(target)
+            
+            # 第一遍：标记绿色（位置正确）
+            res_colors = [None] * 5
+            for i in range(5):
+                if guess[i] == target[i]:
+                    res_colors[i] = "var(--green)"
+                    target_chars[i] = None # 标记已用
+
+            # 第二遍：标记黄色（存在但位置错）或灰色
+            for i in range(5):
+                if res_colors[i] is None:
+                    if guess[i] in target_chars:
+                        res_colors[i] = "var(--yellow)"
+                        target_chars[target_chars.index(guess[i])] = None # 标记已用
+                    else:
+                        res_colors[i] = "var(--gray)"
+
+            # 渲染行
             for i in range(5):
                 tile = document.createElement("div")
                 tile.className = "tile"
-                char = guess[i]
-                tile.innerText = char
-                
-                if char == target[i]:
-                    tile.style.background = "var(--green)"
-                    tile.style.borderColor = "var(--green)"
-                elif char in target:
-                    tile.style.background = "var(--yellow)"
-                    tile.style.borderColor = "var(--yellow)"
-                else:
-                    tile.style.background = "var(--gray)"
-                    tile.style.borderColor = "var(--gray)"
+                tile.innerText = guess[i]
+                tile.style.background = res_colors[i]
+                tile.style.borderColor = res_colors[i]
                 row.appendChild(tile)
-            
+
             document.getElementById("board").appendChild(row)
             attempts += 1
-            guess_input.value = ""
-            guess_input.focus()
+            inp.value = ""
+            
+            # 给出对/错的文字提示
+            correct_count = sum(1 for i in range(5) if guess[i] == target[i])
+            exist_count = sum(1 for i in range(5) if guess[i] != target[i] and guess[i] in target)
             
             if guess == target:
-                document.getElementById("msg").innerText = f"Splendid! {attempts} tries! 🎉"
+                document.getElementById("msg").innerText = f"🎉 Perfect! It's {target}!"
                 end_game()
             elif attempts >= 6:
-                document.getElementById("msg").innerText = f"Game Over! Answer: {target}"
+                document.getElementById("msg").innerText = f"❌ Out of tries! It was {target}"
                 end_game()
-
-        def get_hint(e):
-            global hints_used
-            if hints_used < 3:
-                pos = random.randint(0, 4)
-                letter = target[pos]
-                hints_used += 1
-                document.getElementById("hint-msg").innerText = f"Hint {hints_used}/3: Pos {pos+1} is '{letter}'"
-            if hints_used >= 3:
-                document.getElementById("hint-btn").disabled = True
+            else:
+                document.getElementById("msg").innerText = f"Try {attempts+1} / 6"
+                document.getElementById("feedback-list").innerText = f"Matches: {correct_count} correct, {exist_count} misplaced"
 
         def end_game():
             document.getElementById("guess-input").disabled = True
-            document.getElementById("submit-btn").disabled = True
-            document.getElementById("restart").style.display = "block"
+            document.getElementById("enter-btn").style.display = "none"
+            document.getElementById("restart-btn").style.display = "block"
 
-        # Listeners
-        document.getElementById("submit-btn").onclick = submit_guess
-        document.getElementById("hint-btn").onclick = get_hint
-        document.getElementById("restart").onclick = lambda e: start_game()
+        # 绑定事件
+        document.getElementById("enter-btn").onclick = check_guess
+        document.getElementById("restart-btn").onclick = lambda e: start_game()
         
-        def handle_keypress(e):
-            if e.key == "Enter":
-                submit_guess()
-        document.getElementById("guess-input").onkeypress = handle_keypress
+        def on_kp(e):
+            if e.key == "Enter": check_guess()
+        document.getElementById("guess-input").onkeypress = on_kp
         
         start_game()
     </script>
