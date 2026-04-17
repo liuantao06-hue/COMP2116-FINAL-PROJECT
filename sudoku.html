@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku Pro - Win Detection</title>
+    <title>Sudoku Pro - Logic Check</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
         :root {
             --primary: #6366f1;
+            --danger: #ef4444;
             --success: #22c55e;
             --bg: #f8fafc;
             --cell-size: 42px;
             --border-thick: 3px solid #1e293b;
-            --border-thin: 1px solid #cbd5e1;
         }
 
-        body { font-family: 'Inter', sans-serif; text-align: center; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
-        h2 { letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        body { font-family: 'Inter', sans-serif; text-align: center; background: var(--bg); margin: 0; padding: 20px; }
         
         .game-wrap { display: inline-block; position: relative; }
 
@@ -40,11 +39,12 @@
             font-size: 20px;
             cursor: pointer;
             box-sizing: border-box;
-            border-right: var(--border-thin);
-            border-bottom: var(--border-thin);
-            user-select: none;
+            border-right: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+            transition: all 0.2s;
         }
 
+        /* 宫格加粗边界 */
         .cell:nth-child(3n) { border-right: var(--border-thick); }
         .cell:nth-child(9n) { border-right: var(--border-thick); }
         #grid .cell:nth-child(n+19):nth-child(-n+27),
@@ -53,34 +53,27 @@
             border-bottom: var(--border-thick);
         }
 
+        /* 状态样式 */
         .cell.fixed { background: #f1f5f9; font-weight: 800; color: #000; cursor: default; }
         .cell.selected { background: #dbeafe; outline: 3px solid var(--primary); z-index: 5; }
-        .cell:hover:not(.fixed) { background: #eff6ff; }
-        
-        /* 获胜样式 */
-        .cell.winner { background: #dcfce7; color: var(--success); transition: 0.5s; }
+        .cell.error { color: var(--danger); background: #fee2e2; }
+        .cell.winner { background: #dcfce7 !important; color: var(--success) !important; border-color: var(--success) !important; }
 
         .num-pad { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 380px; margin: 20px auto; gap: 8px; }
-        .num-btn { 
-            padding: 12px; background: white; border: 1px solid #cbd5e1; 
-            border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
-        }
-        .num-btn:hover { background: var(--primary); color: white; }
+        .num-btn { padding: 12px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .num-btn:hover { background: #f1f5f9; }
 
-        .btn-restart { 
-            padding: 12px 40px; background: #1e293b; color: white; border: none; 
-            border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
-        }
-
-        #status-msg { height: 30px; font-weight: bold; color: var(--success); margin: 10px 0; }
-        #loading { font-size: 12px; color: #64748b; }
+        .btn-restart { padding: 12px 40px; background: #1e293b; color: white; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold;}
+        
+        #msg-panel { height: 40px; margin: 10px; font-weight: bold; font-size: 1.2rem; transition: 0.3s; }
+        .text-win { color: var(--success); transform: scale(1.2); }
+        .text-error { color: var(--danger); }
     </style>
 </head>
 <body>
 
-    <h2>SUDOKU PRO</h2>
-    <div id="loading">Initializing Python...</div>
-    <div id="status-msg"></div>
+    <h2>SUDOKU MASTER</h2>
+    <div id="msg-panel">Welcome!</div>
 
     <div class="game-wrap">
         <div id="grid"></div>
@@ -89,7 +82,7 @@
     </div>
 
     <script type="py">
-        from pyscript import document, window
+        from pyscript import document
         import random
 
         class Sudoku:
@@ -99,13 +92,18 @@
                 self.reset()
 
             def is_valid(self, board, r, c, n):
+                if n == 0: return True
+                # 检查行和列
                 for i in range(9):
-                    if board[r][i] == n: return False
-                    if board[i][c] == n: return False
+                    if i != c and board[r][i] == n: return False
+                    if i != r and board[i][c] == n: return False
+                # 检查3x3宫
                 sr, sc = 3 * (r // 3), 3 * (c // 3)
                 for i in range(3):
                     for j in range(3):
-                        if board[sr + i][sc + j] == n: return False
+                        curr_r, curr_c = sr + i, sc + j
+                        if (curr_r != r or curr_c != c) and board[curr_r][curr_c] == n:
+                            return False
                 return True
 
             def solve(self, board):
@@ -122,42 +120,35 @@
                             return False
                 return True
 
-            def generate_puzzle(self):
-                board = [[0 for _ in range(9)] for _ in range(9)]
-                self.solve(board)
-                puzzle = [row[:] for row in board]
-                cells = [(r, c) for r in range(9) for c in range(9)]
-                random.shuffle(cells)
-                # 挖掉 40 个空 (简单/中等难度，方便测试胜利判定)
-                for i in range(40):
-                    r, c = cells[i]
-                    puzzle[r][c] = 0
-                return puzzle
-
             def reset(self):
                 self.game_won = False
-                document.getElementById("status-msg").innerText = ""
-                self.board = self.generate_puzzle()
+                msg = document.getElementById("msg-panel")
+                msg.innerText = "Game Started"
+                msg.className = ""
+                
+                # 生成谜题
+                full_board = [[0]*9 for _ in range(9)]
+                self.solve(full_board)
+                self.board = [row[:] for row in full_board]
+                
+                # 挖掉 40 个空
+                cells = [(r, c) for r in range(9) for c in range(9)]
+                random.shuffle(cells)
+                for i in range(40):
+                    r, c = cells[i]
+                    self.board[r][c] = 0
+                
                 self.fixed = [[bool(c) for c in r] for r in self.board]
                 self.selected_cell = None
                 self.render()
-                document.getElementById("loading").innerText = "Ready to Play!"
 
-            def check_win(self):
-                # 1. 检查是否填满
-                for r in range(9):
-                    if 0 in self.board[r]: return False
-                
-                # 2. 验证规则
+            def check_complete(self):
+                # 检查是否有空格或错误
                 for r in range(9):
                     for c in range(9):
                         val = self.board[r][c]
-                        # 暂时清零当前格来检查是否冲突
-                        self.board[r][c] = 0
-                        valid = self.is_valid(self.board, r, c, val)
-                        self.board[r][c] = val
-                        if not valid: return False
-                
+                        if val == 0 or not self.is_valid(self.board, r, c, val):
+                            return False
                 return True
 
             def render(self):
@@ -166,55 +157,71 @@
                 for r in range(9):
                     for c in range(9):
                         cell = document.createElement("div")
-                        cell.className = "cell" + (" fixed" if self.fixed[r][c] else "")
+                        cell.className = "cell"
+                        if self.fixed[r][c]: cell.classList.add("fixed")
                         if self.game_won: cell.classList.add("winner")
-                        if (r, c) == self.selected_cell: cell.classList.add("selected")
+                        elif (r, c) == self.selected_cell: cell.classList.add("selected")
                         
                         val = self.board[r][c]
+                        # 错误判定：如果填了数但不合法，变红
+                        if val != 0 and not self.is_valid(self.board, r, c, val):
+                            cell.classList.add("error")
+                        
                         cell.innerText = str(val) if val else ""
                         
-                        def make_handler(curr_r, curr_c):
-                            def handler(e):
-                                if not self.fixed[curr_r][curr_c] and not self.game_won:
-                                    self.selected_cell = (curr_r, curr_c)
-                                    self.render()
-                            return handler
-                            
-                        cell.onclick = make_handler(r, c)
+                        def click_factory(curr_r, curr_c):
+                            return lambda e: self.select(curr_r, curr_c)
+                        
+                        cell.onclick = click_factory(r, c)
                         grid_div.appendChild(cell)
+
+            def select(self, r, c):
+                if not self.fixed[r][c] and not self.game_won:
+                    self.selected_cell = (r, c)
+                    self.render()
 
             def set_num(self, n):
                 if self.selected_cell and not self.game_won:
                     r, c = self.selected_cell
                     self.board[r][c] = n
-                    self.render()
                     
-                    if self.check_win():
+                    # 检查是否获胜
+                    if self.check_complete():
                         self.game_won = True
-                        self.selected_cell = None
-                        self.render()
-                        document.getElementById("status-msg").innerText = "🏆 YOU WIN! CONGRATULATIONS!"
+                        msg = document.getElementById("msg-panel")
+                        msg.innerText = "✨ PERFECT! YOU WON! ✨"
+                        msg.className = "text-win"
+                    elif n != 0 and not self.is_valid(self.board, r, c, n):
+                        document.getElementById("msg-panel").innerText = "Duplicate Number! ⚠️"
+                        document.getElementById("msg-panel").className = "text-error"
+                    else:
+                        document.getElementById("msg-panel").innerText = "Keep going..."
+                        document.getElementById("msg-panel").className = ""
+                        
+                    self.render()
 
         game = Sudoku()
 
-        def init_controls():
+        # 初始化控制按钮
+        def init():
             pad = document.getElementById("numpad")
             for i in range(1, 10):
                 btn = document.createElement("button")
                 btn.className = "num-btn"
                 btn.innerText = str(i)
-                btn.onclick = (lambda val: lambda e: game.set_num(val))(i)
+                btn.onclick = (lambda v: lambda e: game.set_num(v))(i)
                 pad.appendChild(btn)
             
-            btn_clear = document.createElement("button")
-            btn_clear.className = "num-btn"
-            btn_clear.style.color = "#ef4444"
-            btn_clear.innerText = "C"
-            btn_clear.onclick = lambda e: game.set_num(0)
-            pad.appendChild(btn_clear)
+            clear = document.createElement("button")
+            clear.className = "num-btn"
+            clear.innerText = "C"
+            clear.style.color = "#ef4444"
+            clear.onclick = lambda e: game.set_num(0)
+            pad.appendChild(clear)
+            
+            document.getElementById("restart").onclick = lambda e: game.reset()
 
-        document.getElementById("restart").onclick = lambda e: game.reset()
-        init_controls()
+        init()
     </script>
 </body>
 </html>
