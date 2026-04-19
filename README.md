@@ -1,5 +1,5 @@
 1. Graphical Abstract
-
+![主页截图](images/6e0a58e81f658e789fc73bcb9b2c67ec.png)
 2. Purpose of the software
 This project is a lightweight mini-game collection designed for daily fragmented-time leisure and entertainment. It helps users relax, exercise logical thinking, improve concentration, and expand vocabulary in an easy and accessible way.
 (1) Software Development Process: 
@@ -28,7 +28,7 @@ During the review and retrospective stage, we demonstrated the usable build vers
 In the final integration stage, we combined all four independent mini-games into a unified launcher platform, completed the unified design and interaction optimization of the main menu, realized stable and smooth cross-game navigation and switching, and ensured the overall consistency and operational stability of the entire game collection system.
 7. Documentation & video: Complete README and demo video.
 (2) Members (Roles & Responsibilities & Portion):
-
+![主页截图](images/490e4aa9a45d38a33c7f26e1c833b59c.png)
 (3) Schedule:
 1. Week 1 – Sprint 1: Project Initiation & Requirement Analysis
 Complete project topic confirmation, requirement analysis, and Agile development framework setup. Define game functions, technical architecture, and team task allocation. Finalize development environment, library selection, GitHub repository setup, and initial design draft.
@@ -38,7 +38,7 @@ Develop the main program framework, menu system, and basic interaction logic. Im
 Develop all remaining mini‑games, integrate them into the main system, and unify UI style. Perform functional testing, usability testing, bug fixing, and logic optimization. Complete core algorithm verification and stability improvement.
 4. Week 4 – Sprint 4: Integration & Final Optimization
 Complete full system integration, test cross-game navigation, adjust user experience, optimize performance, and finalize all game functions to ensure stable operation. Write complete README documentation, record and edit the demo video.
-
+![主页截图](images/490e4aa9a45d38a33c7f26e1c833b59c.png)
 (4) Algorithm:
 1. Sudoku Algorithm:
 Backtracking: A recursive depth-first search that builds a valid grid and ensures the puzzle has a solution.
