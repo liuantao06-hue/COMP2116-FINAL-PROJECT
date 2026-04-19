@@ -96,7 +96,7 @@ Dictionary Filtering: Uses a random index selector to pull a 5-letter target fro
 ---
 
 # Demo Video
-YouTube URL: [ ]
+YouTube URL: [ https://youtu.be/IpKWxLNC8LE?si=XsN-foq4iDa3C-F5]
 
 ---
 
