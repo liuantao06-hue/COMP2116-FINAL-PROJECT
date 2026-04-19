@@ -6,13 +6,13 @@ This project is a lightweight mini-game collection designed for daily fragmented
 This project follows the Agile Model.
 (2) Reason:
 We chose Agile as our software development process for these reasons:
- Flexibility: Easy to adapt to new ideas, bug fixes, and user feedback during development.
- Team collaboration: Clear role division and short sprint cycles improve efficiency.
- User-centric: Early demoable versions let us validate usability early.
+1.Flexibility: Easy to adapt to new ideas, bug fixes, and user feedback during development.
+2.Team collaboration: Clear role division and short sprint cycles improve efficiency.
+3.User-centric: Early demoable versions let us validate usability early.
 Since our project contains four independent mini-games, Agile allows us to develop, test, and adjust each game separately, which is much more efficient than the rigid and fixed Waterfall model.
 (3) Possible usage of software (Target Market)：
 This game collection is used for leisure and entertainment in fragmented daily time. It targets students, office workers, and users of all ages who seek a convenient way to relax, exercise logical thinking, enhance concentration, and expand vocabulary while easily killing time. It serves as a lightweight, accessible casual gaming solution suitable for short breaks, commutes, waiting periods, and other free moments, filling a practical demand in the market for lowthreshold, brainengaging entertainment that balances fun and cognitive exercise without requiring longterm commitment or heavy hardware resources.
-3. Software Development Plan
+4. Software Development Plan
 (1) Development process:
 1. Sprint planning:
 During the sprint planning stage, we confirmed the four-game lineup of our mini-game collection, including Tetris, Wordle, Sudoku, and Match-3, and clearly defined the core gameplay functions and interactive rules for each game. We also determined the technical architecture and selected PyScript as the core framework to support Python code running directly in the browser, and set clear, achievable development objectives and task scope for each sprint to ensure efficient and targeted progress of the whole project.
@@ -41,38 +41,38 @@ Complete full system integration, test cross-game navigation, adjust user experi
 
 (4) Algorithm:
 1. Sudoku Algorithm:
- Backtracking: A recursive depth-first search that builds a valid grid and ensures the puzzle has a solution.
- Constraint Checking: Real-time validation verifying row, column, and 3x3 box uniqueness (1-9).
- Randomization: Shuffle-based cell selection to ensure unique puzzle layouts every game.
+Backtracking: A recursive depth-first search that builds a valid grid and ensures the puzzle has a solution.
+Constraint Checking: Real-time validation verifying row, column, and 3x3 box uniqueness (1-9).
+Randomization: Shuffle-based cell selection to ensure unique puzzle layouts every game.
 2. Tetris Algorithm:
- Collision Detection: Checks grid boundaries and occupied cells to prevent blocks from overlapping or exiting the playfield.
- Matrix Manipulation: Uses 2D arrays to track the board state and performs 90° matrix rotations for block movement.
- Line Clearing: Scans the 2D grid after each placement; if a row is fully occupied, it is deleted and all rows above shift downward.
-3. Wordle (Word Guess) Algorithm:
- Character Comparison: A two-pass matching process: Identifies exact matches (Green); Identifies character existence in wrong positions (Yellow) while tracking frequency.
- Letter Frequency Logic: Prevents duplicate hints for the same letter if the count exceeds the target word's frequency.
- Dictionary Filtering: Uses a random index selector to pull a 5-letter target from a pre-defined word array.
+3.  Collision Detection: Checks grid boundaries and occupied cells to prevent blocks from overlapping or exiting the playfield.
+Matrix Manipulation: Uses 2D arrays to track the board state and performs 90° matrix rotations for block movement.
+Line Clearing: Scans the 2D grid after each placement; if a row is fully occupied, it is deleted and all rows above shift downward.
+4. Wordle (Word Guess) Algorithm:
+Character Comparison: A two-pass matching process: Identifies exact matches (Green); Identifies character existence in wrong positions (Yellow) while tracking frequency.
+Letter Frequency Logic: Prevents duplicate hints for the same letter if the count exceeds the target word's frequency.
+Dictionary Filtering: Uses a random index selector to pull a 5-letter target from a pre-defined word array.
 (5) Current Status:
- All planned mini-games are fully implemented and runnable.
- Unified main menu and navigation are complete.
- Basic testing and bug fixing finished.
- All game control logic, scoring systems, and user interactions run stably.
- System integration between the main platform and all games works reliably.
- User interface design is consistent, clear, and user-friendly.
+All planned mini-games are fully implemented and runnable.
+Unified main menu and navigation are complete.
+Basic testing and bug fixing finished.
+All game control logic, scoring systems, and user interactions run stably.
+System integration between the main platform and all games works reliably.
+User interface design is consistent, clear, and user-friendly.
 (6) Future Plan:
- Add more mini-game types.
- Implement leaderboard and local save.
- Optimize UI for mobile/responsive layout.
- Add sound effects and background music.
- Support multiple languages
-4. Demo Video
+Add more mini-game types.
+Implement leaderboard and local save.
+Optimize UI for mobile/responsive layout.
+Add sound effects and background music.
+Support multiple languages
+5. Demo Video
 You Tube URL : [ ]
-5. Environment
+6. Environment
 (1) Programming Language: Python 3.11+ & HTML5/CSS3
 (2) Framework/Libraries: PyScript (Core.js), Standard Random Library
 (3) Minimum Hardware Requirements: Dual-core CPU, 2GB RAM, 1024x768 Display
 (4) Minimum Software Requirements: Modern Web Browser (Chrome/Edge/Firefox/Safari) with WebAssembly support
-6. Declaration
-  Originality: Original implementation using Python logic in a web environment.
-  AI Usage: UI/UX and logic optimization assisted by AI (Gemini).
-  License: Open for educational and non-commercial use.
+7. Declaration
+Originality: Original implementation using Python logic in a web environment.
+AI Usage: UI/UX and logic optimization assisted by AI (Gemini).
+License: Open for educational and non-commercial use.
