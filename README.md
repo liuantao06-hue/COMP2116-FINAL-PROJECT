@@ -1,5 +1,5 @@
 1. Graphical Abstract
-![主页截图](images/6e0a58e81f658e789fc73bcb9b2c67ec.png)
+![主页截图](images/ae7a41d02a12a4b2fab6e0cc62f04242.jpg)
 2. Purpose of the software
 This project is a lightweight mini-game collection designed for daily fragmented-time leisure and entertainment. It helps users relax, exercise logical thinking, improve concentration, and expand vocabulary in an easy and accessible way.
 (1) Software Development Process: 
@@ -28,7 +28,7 @@ During the review and retrospective stage, we demonstrated the usable build vers
 In the final integration stage, we combined all four independent mini-games into a unified launcher platform, completed the unified design and interaction optimization of the main menu, realized stable and smooth cross-game navigation and switching, and ensured the overall consistency and operational stability of the entire game collection system.
 7. Documentation & video: Complete README and demo video.
 (2) Members (Roles & Responsibilities & Portion):
-![主页截图](images/490e4aa9a45d38a33c7f26e1c833b59c.png)
+![主页截图](images/6e0a58e81f658e789fc73bcb9b2c67ec.png)
 (3) Schedule:
 1. Week 1 – Sprint 1: Project Initiation & Requirement Analysis
 Complete project topic confirmation, requirement analysis, and Agile development framework setup. Define game functions, technical architecture, and team task allocation. Finalize development environment, library selection, GitHub repository setup, and initial design draft.
