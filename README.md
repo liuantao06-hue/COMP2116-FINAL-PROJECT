@@ -1,4 +1,4 @@
-#Graphical Abstract
+# Graphical Abstract
 ![主页截图](images/ae7a41d02a12a4b2fab6e0cc62f04242.jpg)
 #Purpose of the software
 This project is a lightweight mini-game collection designed for daily fragmented-time leisure and entertainment. It helps users relax, exercise logical thinking, improve concentration, and expand vocabulary in an easy and accessible way.
@@ -12,7 +12,7 @@ We chose Agile as our software development process for these reasons:
 Since our project contains four independent mini-games, Agile allows us to develop, test, and adjust each game separately, which is much more efficient than the rigid and fixed Waterfall model.
 (3) Possible usage of software (Target Market)：
 This game collection is used for leisure and entertainment in fragmented daily time. It targets students, office workers, and users of all ages who seek a convenient way to relax, exercise logical thinking, enhance concentration, and expand vocabulary while easily killing time. It serves as a lightweight, accessible casual gaming solution suitable for short breaks, commutes, waiting periods, and other free moments, filling a practical demand in the market for low threshold, brain engaging entertainment that balances fun and cognitive exercise without requiring long term commitment or heavy hardware resources.
-#Software Development Plan
+# Software Development Plan
 (1) Development process:
 1. Sprint planning:
 During the sprint planning stage, we confirmed the four-game lineup of our mini-game collection, including Tetris, Wordle, Sudoku, and Match-3, and clearly defined the core gameplay functions and interactive rules for each game. We also determined the technical architecture and selected PyScript as the core framework to support Python code running directly in the browser, and set clear, achievable development objectives and task scope for each sprint to ensure efficient and targeted progress of the whole project.
