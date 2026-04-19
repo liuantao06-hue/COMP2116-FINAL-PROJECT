@@ -11,7 +11,7 @@ We chose Agile as our software development process for these reasons:
 3.User-centric: Early demoable versions let us validate usability early.
 Since our project contains four independent mini-games, Agile allows us to develop, test, and adjust each game separately, which is much more efficient than the rigid and fixed Waterfall model.
 (3) Possible usage of software (Target Market)：
-This game collection is used for leisure and entertainment in fragmented daily time. It targets students, office workers, and users of all ages who seek a convenient way to relax, exercise logical thinking, enhance concentration, and expand vocabulary while easily killing time. It serves as a lightweight, accessible casual gaming solution suitable for short breaks, commutes, waiting periods, and other free moments, filling a practical demand in the market for lowthreshold, brainengaging entertainment that balances fun and cognitive exercise without requiring longterm commitment or heavy hardware resources.
+This game collection is used for leisure and entertainment in fragmented daily time. It targets students, office workers, and users of all ages who seek a convenient way to relax, exercise logical thinking, enhance concentration, and expand vocabulary while easily killing time. It serves as a lightweight, accessible casual gaming solution suitable for short breaks, commutes, waiting periods, and other free moments, filling a practical demand in the market for low threshold, brain engaging entertainment that balances fun and cognitive exercise without requiring long term commitment or heavy hardware resources.
 4. Software Development Plan
 (1) Development process:
 1. Sprint planning:
